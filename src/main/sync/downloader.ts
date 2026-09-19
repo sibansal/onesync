@@ -171,10 +171,20 @@ export async function downloadFile(
   });
 
   try {
-    await pipeline(remoteStream, hashingTransform);
+    await pipeline(remoteStream, hashingTransform, { signal });
     writeStream.end();
   } catch (streamErr: unknown) {
     writeStream.destroy();
+
+    if (signal?.aborted || (streamErr instanceof Error && streamErr.name === 'AbortError')) {
+      throw new SyncError({
+        code: 'CANCELLED',
+        message: 'Download cancelled by user',
+        retriable: false,
+        cause: streamErr
+      });
+    }
+
     const code = (streamErr as NodeJS.ErrnoException).code;
     if (code === 'ENOSPC') {
       throw new SyncError({

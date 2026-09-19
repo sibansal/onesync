@@ -35,6 +35,7 @@ export interface ExecutorOptions {
   concurrency?: number;
   onProgress?: (progress: ExecutorProgressPayload) => void;
   signal?: AbortSignal;
+  checkPause?: () => Promise<void>;
 }
 
 export interface ExecutorResult {
@@ -115,6 +116,14 @@ export async function executePlan(
   await mapConcurrent(
     sortedActions,
     async (action) => {
+      if (signal?.aborted) {
+        return;
+      }
+
+      if (options.checkPause) {
+        await options.checkPause();
+      }
+
       if (signal?.aborted) {
         return;
       }
@@ -250,6 +259,18 @@ export async function executePlan(
           }
         }
       } catch (itemErr: unknown) {
+        activeDownloadsMap.delete(item.id);
+
+        if (
+          signal?.aborted ||
+          (SyncError.isSyncError(itemErr) && itemErr.code === 'CANCELLED') ||
+          (itemErr instanceof Error &&
+            (itemErr.name === 'AbortError' || itemErr.message.toLowerCase().includes('cancelled')))
+        ) {
+          reportProgress();
+          return;
+        }
+
         logger.error(`Error processing action for ${item.name}:`, itemErr);
 
         if (SyncError.isSyncError(itemErr)) {
@@ -297,6 +318,26 @@ export async function executePlan(
         try {
           await withRetry(
             async () => {
+              if (signal?.aborted) {
+                throw new SyncError({
+                  code: 'CANCELLED',
+                  message: 'Sync was cancelled by user',
+                  retriable: false
+                });
+              }
+
+              if (options.checkPause) {
+                await options.checkPause();
+              }
+
+              if (signal?.aborted) {
+                throw new SyncError({
+                  code: 'CANCELLED',
+                  message: 'Sync was cancelled by user',
+                  retriable: false
+                });
+              }
+
               return downloadFile(
                 {
                   id: item.id,

@@ -43,7 +43,9 @@ export class GraphDrive implements RemoteDrive {
 
   public async listChanges(
     deltaLink: string | null,
-    onPage: (items: RemoteItem[]) => void
+    onPage: (items: RemoteItem[]) => void,
+    signal?: AbortSignal,
+    checkPause?: () => Promise<void>
   ): Promise<{ deltaLink: string; isFullListing: boolean }> {
     let isFullListing = !deltaLink;
     const initialUrl =
@@ -54,7 +56,27 @@ export class GraphDrive implements RemoteDrive {
     let finalDeltaLink = '';
 
     while (nextUrl) {
-      const response = await graphFetch(nextUrl, {}, this.authService);
+      if (signal?.aborted) {
+        throw new SyncError({
+          code: 'CANCELLED',
+          message: 'Sync was cancelled by user',
+          retriable: false
+        });
+      }
+
+      if (checkPause) {
+        await checkPause();
+      }
+
+      if (signal?.aborted) {
+        throw new SyncError({
+          code: 'CANCELLED',
+          message: 'Sync was cancelled by user',
+          retriable: false
+        });
+      }
+
+      const response = await graphFetch(nextUrl, { signal }, this.authService);
 
       // Handle 410 Gone: delta token expired -> fallback to full enumeration
       if (response.status === 410) {

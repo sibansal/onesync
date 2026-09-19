@@ -41,6 +41,17 @@ export async function graphFetch(
           headers
         });
       } catch (networkErr: unknown) {
+        if (
+          options.signal?.aborted ||
+          (networkErr instanceof Error && networkErr.name === 'AbortError')
+        ) {
+          throw new SyncError({
+            code: 'CANCELLED',
+            message: 'Request was cancelled',
+            retriable: false,
+            cause: networkErr
+          });
+        }
         throw new SyncError({
           code: 'NETWORK',
           message: `Network request failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`,

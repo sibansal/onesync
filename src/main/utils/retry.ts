@@ -55,6 +55,14 @@ export async function withRetry<T>(
     try {
       return await fn(attempt);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
+
+      if (SyncError.isSyncError(err) && (err.code === 'CANCELLED' || !err.retriable)) {
+        throw err;
+      }
+
       attempt++;
 
       if (attempt > maxRetries) {

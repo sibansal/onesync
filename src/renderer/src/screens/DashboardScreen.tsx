@@ -319,10 +319,11 @@ export function DashboardScreen({
       <div
         style={{
           flex: 1,
-          padding: '1.5rem',
+          padding: '1.25rem 1.5rem',
           overflowY: 'auto',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          minHeight: 0
         }}
       >
         {/* Drive Disconnected Warning Banner */}
@@ -479,7 +480,8 @@ export function DashboardScreen({
             background: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-md)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            minHeight: '260px'
           }}
         >
           <div
@@ -517,7 +519,16 @@ export function DashboardScreen({
             })}
           </div>
 
-          <div style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
+          <div
+            style={{
+              flex: 1,
+              padding: '0.75rem 1rem',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0
+            }}
+          >
             {activeTab === 'activity' && <ActivityTab logs={logs} />}
             {activeTab === 'failed' && (
               <FailedTab items={failedItems} onRetry={handleRetryFailed} />

@@ -6,7 +6,9 @@ export interface RemoteDrive {
   getQuota(): Promise<DriveQuota>;
   listChanges(
     deltaLink: string | null,
-    onPage: (items: RemoteItem[]) => void
+    onPage: (items: RemoteItem[]) => void,
+    signal?: AbortSignal,
+    checkPause?: () => Promise<void>
   ): Promise<{ deltaLink: string; isFullListing: boolean }>;
   openDownload(
     item: RemoteItem,

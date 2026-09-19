@@ -149,8 +149,22 @@ export class MockDrive implements RemoteDrive {
 
   public async listChanges(
     deltaLink: string | null,
-    onPage: (items: RemoteItem[]) => void
+    onPage: (items: RemoteItem[]) => void,
+    signal?: AbortSignal,
+    checkPause?: () => Promise<void>
   ): Promise<{ deltaLink: string; isFullListing: boolean }> {
+    if (signal?.aborted) {
+      throw new SyncError({
+        code: 'CANCELLED',
+        message: 'Sync was cancelled by user',
+        retriable: false
+      });
+    }
+
+    if (checkPause) {
+      await checkPause();
+    }
+
     // Check failure queue for list-targeted failures
     const listFailureIdx = this.failureQueue.findIndex(
       (f) => f.target === 'list' || (!f.target && f.type !== '403' && f.type !== 'expired_url')

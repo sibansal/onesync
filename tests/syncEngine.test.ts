@@ -128,4 +128,37 @@ describe('SyncEngine with MockDrive', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('different OneDrive account');
   });
+
+  it('cancels sync cleanly when cancelSync() is called mid-run', async () => {
+    mockDrive.addFile('f1', 'root', 'large1.dat', Buffer.alloc(1024 * 1024, 1));
+    mockDrive.addFile('f2', 'root', 'large2.dat', Buffer.alloc(1024 * 1024, 2));
+
+    const syncPromise = engine.startSync();
+
+    // Give it a tiny tick to begin
+    await new Promise((r) => setTimeout(r, 10));
+    engine.cancelSync();
+
+    const result = await syncPromise;
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('cancelled by user');
+    expect(engine.getState().isRunning).toBe(false);
+    expect(engine.getState().phase).toBe('idle');
+  });
+
+  it('pauses and resumes sync when pauseSync() and resumeSync() are called', async () => {
+    mockDrive.addFile('f1', 'root', 'file1.txt', 'Hello world');
+
+    const syncPromise = engine.startSync();
+    engine.pauseSync();
+    expect(engine.getState().isPaused).toBe(true);
+
+    await new Promise((r) => setTimeout(r, 250));
+    engine.resumeSync();
+    expect(engine.getState().isPaused).toBe(false);
+
+    const result = await syncPromise;
+    expect(result.success).toBe(true);
+    expect(engine.getState().isRunning).toBe(false);
+  });
 });

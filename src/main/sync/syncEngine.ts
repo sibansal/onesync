@@ -46,6 +46,7 @@ export class SyncEngine {
   private currentPhase: SyncPhase = 'idle';
   private isRunning = false;
   private isPaused = false;
+  private prePausedPhase: SyncPhase = 'scanning';
   private isWaitingMassMove = false;
   private pendingMassMoveResolve: ((allow: boolean) => void) | null = null;
   private pendingMovesCount = 0;
@@ -53,6 +54,30 @@ export class SyncEngine {
   private abortController: AbortController | null = null;
   private powerSaveBlockerId: number | null = null;
   private currentProgress: SyncProgress;
+
+  private async checkPauseAndCancel(): Promise<void> {
+    if (this.abortController?.signal.aborted) {
+      throw new SyncError({
+        code: 'CANCELLED',
+        message: 'Sync was cancelled by user',
+        retriable: false
+      });
+    }
+
+    if (this.isPaused) {
+      while (this.isPaused && !this.abortController?.signal.aborted) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
+
+    if (this.abortController?.signal.aborted) {
+      throw new SyncError({
+        code: 'CANCELLED',
+        message: 'Sync was cancelled by user',
+        retriable: false
+      });
+    }
+  }
 
   constructor(remoteDrive: RemoteDrive, listeners: SyncEngineListeners) {
     this.remoteDrive = remoteDrive;
@@ -265,11 +290,16 @@ export class SyncEngine {
 
       const lastDeltaLink = this.metaRepo!.getDeltaLink();
       let totalDiscovered = 0;
-      const deltaResult = await this.remoteDrive.listChanges(lastDeltaLink, (pageItems) => {
-        this.itemsRepo!.upsertBatch(pageItems, runId!);
-        totalDiscovered += pageItems.length;
-        this.emitLog('info', `Discovered ${totalDiscovered} cloud items...`);
-      });
+      const deltaResult = await this.remoteDrive.listChanges(
+        lastDeltaLink,
+        (pageItems) => {
+          this.itemsRepo!.upsertBatch(pageItems, runId!);
+          totalDiscovered += pageItems.length;
+          this.emitLog('info', `Discovered ${totalDiscovered} cloud items...`);
+        },
+        this.abortController.signal,
+        () => this.checkPauseAndCancel()
+      );
 
       // Empty-listing guard
       const currentTrackedCount = this.itemsRepo!.getCount();
@@ -354,6 +384,8 @@ export class SyncEngine {
         }
       }
 
+      await this.checkPauseAndCancel();
+
       // ==========================================
       // STAGE 4: EXECUTE
       // ==========================================
@@ -367,6 +399,7 @@ export class SyncEngine {
         restoredLogRepo: this.restoredLogRepo!,
         concurrency: config.syncConcurrency,
         signal: this.abortController.signal,
+        checkPause: () => this.checkPauseAndCancel(),
         onProgress: (p) => {
           this.currentProgress = {
             ...this.currentProgress,
@@ -384,6 +417,8 @@ export class SyncEngine {
           this.listeners.onProgress(this.currentProgress);
         }
       });
+
+      await this.checkPauseAndCancel();
 
       // ==========================================
       // STAGE 5: SWEEP
@@ -445,6 +480,28 @@ export class SyncEngine {
       this.setPhase('idle');
       return { success: true };
     } catch (err: unknown) {
+      const isCancelled =
+        this.abortController?.signal.aborted ||
+        (err instanceof SyncError && err.code === 'CANCELLED') ||
+        (err instanceof Error &&
+          (err.name === 'AbortError' || err.message.toLowerCase().includes('cancelled')));
+
+      if (isCancelled) {
+        this.emitLog('info', 'Sync cancelled by user.');
+        if (runId && this.syncRunsRepo) {
+          this.syncRunsRepo.finishRun(runId, {
+            status: 'failed',
+            downloaded: this.currentProgress.downloadedCount,
+            skipped: this.currentProgress.upToDateCount,
+            restored: this.currentProgress.restoredCount,
+            failed: this.currentProgress.failedCount,
+            bytes: this.currentProgress.bytesDone
+          });
+        }
+        this.setPhase('idle');
+        return { success: false, error: 'Sync cancelled by user' };
+      }
+
       const errMsg = err instanceof Error ? err.message : String(err);
       this.emitLog('error', `Sync failed: ${errMsg}`);
 
@@ -472,6 +529,7 @@ export class SyncEngine {
   public pauseSync(): void {
     if (this.isRunning && !this.isPaused) {
       this.isPaused = true;
+      this.prePausedPhase = this.currentPhase;
       this.setPhase('paused');
       this.emitLog('info', 'Sync paused by user');
     }
@@ -480,13 +538,18 @@ export class SyncEngine {
   public resumeSync(): void {
     if (this.isRunning && this.isPaused) {
       this.isPaused = false;
-      this.setPhase('downloading');
+      const targetPhase =
+        this.prePausedPhase && this.prePausedPhase !== 'paused'
+          ? this.prePausedPhase
+          : 'downloading';
+      this.setPhase(targetPhase);
       this.emitLog('info', 'Sync resumed');
     }
   }
 
   public cancelSync(): void {
     if (this.isRunning) {
+      this.isPaused = false;
       this.abortController?.abort();
       this.emitLog('info', 'Cancelling active sync run...');
       if (this.pendingMassMoveResolve) {

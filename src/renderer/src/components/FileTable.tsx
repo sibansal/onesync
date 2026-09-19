@@ -1,3 +1,4 @@
+import React, { useRef, useEffect } from 'react';
 import type {
   ActiveDownload,
   FailedItem,
@@ -85,9 +86,26 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
 }
 
 export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Element {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [logs.length]);
+
   if (logs.length === 0) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem',
+          color: 'var(--text-muted)'
+        }}
+      >
         No recent activity logged.
       </div>
     );
@@ -95,15 +113,17 @@ export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Eleme
 
   return (
     <div
+      ref={containerRef}
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: '0.8rem',
-        maxHeight: '320px',
+        flex: 1,
+        minHeight: '220px',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
         gap: '4px',
-        padding: '0.5rem',
+        padding: '0.75rem',
         background: 'var(--bg-input)',
         borderRadius: 'var(--radius-sm)'
       }}

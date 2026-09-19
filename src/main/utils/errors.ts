@@ -13,6 +13,7 @@ export type SyncErrorCode =
   | 'FS_LIMIT'
   | 'PATH_TOO_LONG'
   | 'PERMISSION_DENIED'
+  | 'CANCELLED'
   | 'UNKNOWN';
 
 export class SyncError extends Error {
