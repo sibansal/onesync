@@ -1,4 +1,5 @@
 import React from 'react';
+import appLogo from '../assets/icon.png';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
         </button>
 
         <img
-          src="/icon.png"
+          src={appLogo}
           alt="OneSync Logo"
           style={{
             width: '72px',
