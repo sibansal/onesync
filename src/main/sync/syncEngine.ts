@@ -118,8 +118,20 @@ export class SyncEngine {
   public setSourceFolder(folder: string | null): void {
     if (this.sourceFolder !== folder) {
       this.sourceFolder = folder;
-      if (this.metaRepo) {
-        this.metaRepo.setDeltaLink('');
+      try {
+        if (this.baseFolder) {
+          this.ensureDatabase();
+          if (this.metaRepo) {
+            this.metaRepo.setDeltaLink('');
+            this.metaRepo.setSourceFolder(folder);
+          }
+          if (this.itemsRepo && this.appDb) {
+            const rawDb = this.appDb.getRawDb();
+            rawDb.exec('DELETE FROM items;');
+          }
+        }
+      } catch (err) {
+        logger.warn('Failed to clear delta/items on source folder change:', err);
       }
       this.emitLog('info', `OneDrive source folder set to: ${folder || 'Entire OneDrive (/)'}`);
     }
@@ -138,34 +150,14 @@ export class SyncEngine {
     }
 
     try {
-      if (this.appDb) {
-        try {
-          this.appDb.close();
-        } catch {
-          // ignore
-        }
-        this.appDb = null;
-        this.metaRepo = null;
-        this.itemsRepo = null;
-        this.restoredLogRepo = null;
-        this.syncRunsRepo = null;
-      }
-
-      const dbPath = join(this.baseFolder, '.onesync', 'state.db');
-      const walPath = `${dbPath}-wal`;
-      const shmPath = `${dbPath}-shm`;
-      const journalPath = `${dbPath}-journal`;
-
-      if (existsSync(dbPath)) unlinkSync(dbPath);
-      if (existsSync(walPath)) unlinkSync(walPath);
-      if (existsSync(shmPath)) unlinkSync(shmPath);
-      if (existsSync(journalPath)) unlinkSync(journalPath);
-
-      // Re-initialize fresh database
       this.ensureDatabase();
-      if (this.account && this.metaRepo) {
-        this.metaRepo.setAccountId(this.account.id);
-      }
+      const rawDb = this.appDb!.getRawDb();
+      rawDb.transaction(() => {
+        rawDb.exec('DELETE FROM items;');
+        rawDb.exec('DELETE FROM restored_log;');
+        rawDb.exec('DELETE FROM sync_runs;');
+        rawDb.exec("DELETE FROM meta WHERE key NOT IN ('account_id', 'schema_version');");
+      })();
 
       this.currentJobId = null;
       this.isCancelled = false;
@@ -427,6 +419,20 @@ export class SyncEngine {
         `Stage 2: Scanning OneDrive changes${this.sourceFolder ? ` in ${this.sourceFolder}` : ''}`,
       );
 
+      // Reconcile source folder scope if changed since last run
+      const storedSource = this.metaRepo!.getSourceFolder();
+      const currentSource = this.sourceFolder || '';
+      if (storedSource !== null && storedSource !== currentSource) {
+        this.emitLog(
+          'info',
+          `Source scope changed (${storedSource || '/'} -> ${currentSource || '/'}). Resetting catalog.`,
+        );
+        const rawDb = this.appDb!.getRawDb();
+        rawDb.exec('DELETE FROM items;');
+        this.metaRepo!.setDeltaLink('');
+      }
+      this.metaRepo!.setSourceFolder(currentSource);
+
       const lastDeltaLink = this.metaRepo!.getDeltaLink();
       let totalDiscovered = 0;
       const deltaResult = await this.remoteDrive.listChanges(
@@ -443,7 +449,12 @@ export class SyncEngine {
 
       // Empty-listing guard
       const currentTrackedCount = this.itemsRepo!.getCount();
-      if (totalDiscovered === 0 && currentTrackedCount > 0 && deltaResult.isFullListing) {
+      if (
+        !options.force &&
+        totalDiscovered === 0 &&
+        currentTrackedCount > 0 &&
+        deltaResult.isFullListing
+      ) {
         throw new SyncError({
           code: 'UNKNOWN',
           message:

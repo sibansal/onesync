@@ -49,4 +49,17 @@ export class MetaRepo {
   public setLastSyncAt(timestamp: number): void {
     this.set('last_sync_at', String(timestamp));
   }
+
+  public getSourceFolder(): string | null {
+    return this.get('source_folder');
+  }
+
+  public setSourceFolder(folder: string | null): void {
+    if (folder === null || folder === '') {
+      this.db.prepare("DELETE FROM meta WHERE key = 'source_folder'").run();
+    } else {
+      this.set('source_folder', folder);
+    }
+  }
 }
+
