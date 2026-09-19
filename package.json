@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@azure/msal-node": "^2.16.2",
-    "better-sqlite3": "^11.8.1",
+    "better-sqlite3": "^13.0.3",
     "electron-log": "^5.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -40,16 +40,22 @@
     "@typescript-eslint/parser": "^8.24.0",
     "@vitejs/plugin-react": "^4.3.4",
     "dotenv-cli": "^8.0.0",
-    "electron": "^33.3.1",
-    "electron-builder": "^25.1.8",
-    "electron-vite": "^2.3.0",
+    "electron": "^44.4.3",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^4.6.2",
     "prettier": "^3.5.1",
     "typescript": "^5.7.3",
-    "vite": "^5.4.14",
-    "vitest": "^2.1.8"
+    "vite": "^6.4.3",
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "tar": "^7.5.22",
+    "builder-util-runtime": "^9.7.0",
+    "@electron/asar": "^4.3.0",
+    "uuid": "^11.1.1"
   }
 }
