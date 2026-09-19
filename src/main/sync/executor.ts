@@ -6,7 +6,7 @@ import type { ItemsRepo } from '../db/itemsRepo';
 import type { RestoredLogRepo } from '../db/logRepo';
 import { downloadFile, type DownloadProgressUpdate } from './downloader';
 import { moveToRestored, safeMove } from '../fs/safeMove';
-import { computeLocalFileHash } from './localScanner';
+import { computeLocalFileHash, probeFileReadable } from './localScanner';
 import { mapConcurrent } from '../utils/pool';
 import { withRetry } from '../utils/retry';
 import { SyncError } from '../utils/errors';
@@ -137,13 +137,21 @@ export async function executePlan(
             if (item.status !== 'synced' || item.local_path !== desiredPath) {
               if (existsSync(targetFullPath)) {
                 const s = statSync(targetFullPath);
-                itemsRepo.updateLocalSynced(item.id, {
-                  localPath: desiredPath,
-                  localSize: s.size,
-                  localMtimeMs: Math.round(s.mtimeMs),
-                  syncedFingerprint: item.fingerprint,
-                  syncedAt: Date.now(),
-                });
+                const hasAllocatedBlocks =
+                  item.size === 0 || s.blocks === undefined || s.blocks > 0;
+                if (
+                  s.size === item.size &&
+                  hasAllocatedBlocks &&
+                  probeFileReadable(targetFullPath, item.size)
+                ) {
+                  itemsRepo.updateLocalSynced(item.id, {
+                    localPath: desiredPath,
+                    localSize: s.size,
+                    localMtimeMs: Math.round(s.mtimeMs),
+                    syncedFingerprint: item.fingerprint,
+                    syncedAt: Date.now(),
+                  });
+                }
               }
             }
             upToDateCount++;

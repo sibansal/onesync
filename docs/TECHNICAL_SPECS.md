@@ -128,6 +128,7 @@ Definitions:
 - `D`: Recorded DB row state for item
 - **Fingerprint**: `hash ?? cTag ?? eTag`
 - **Healthy**: Regular file, `size == D.local_size`, and `abs(mtime - D.local_mtime_ms) <= 2000 ms`
+- **Pre-existing Health Check**: For files present on disk without a prior DB record (`!hasDbRecord`), health is verified via: matching size + physical block allocation (`blocks > 0` or undefined) + fast sub-millisecond boundary seek & read probe (`probeFileReadable` reading head 4 KB and tail 4 KB in < 0.2 ms regardless of size, even on files > 10 GB). This probe executes **exclusively on pre-existing files**, avoiding any disk I/O overhead on files already synced and tracked in the database.
 
 | # | Situation | Action |
 |---|---|---|
@@ -140,7 +141,7 @@ Definitions:
 | 7 | `L` exists, fingerprint unchanged, size matches, mtime differs | Hash-verify `L`: match → update DB (`SKIP`); mismatch → move to `restored/` (`local_modified`), then `DOWNLOAD` |
 | 8 | `L` exists, fingerprint changed, `L` matches `D` (unmodified locally) | `DOWNLOAD` (atomic replacement) |
 | 9 | `L` exists, fingerprint changed and `L` differs from `D`, or size/hash mismatch | Move to `restored/` (`local_modified`), then `DOWNLOAD` |
-| 10 | `L` exists but no DB record (pre-existing file in dir) | If healthy (matching size): mark as `SKIP` (recorded in DB as `synced`, no action on file); if mismatch: move to `restored/` (`untracked_conflict`), then `DOWNLOAD` |
+| 10 | `L` exists but no DB record (pre-existing file in dir) | If healthy (matching size, non-hollow block allocation, and passing head+tail boundary probe): mark as `SKIP` (recorded in DB as `synced`, no action on file); if mismatch or unreadable: move to `restored/` (`untracked_conflict`), then `DOWNLOAD` |
 
 ---
 

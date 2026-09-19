@@ -180,6 +180,18 @@ describe('Planner - 10-Row Decision Matrix', () => {
     const conflictSizeAction = planSyncItem(item, 'test.pdf', mismatchSizeLocal, undefined);
     expect(conflictSizeAction.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
     expect(conflictSizeAction.conflictReason).toBe('untracked_conflict');
+
+    // Unreadable preexisting file -> CONFLICT_MOVE_THEN_DOWNLOAD
+    const unreadableLocal = createLocalSnapshot({ size: 500, isReadable: false });
+    const unreadableAction = planSyncItem(item, 'test.pdf', unreadableLocal, undefined);
+    expect(unreadableAction.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
+    expect(unreadableAction.conflictReason).toBe('untracked_conflict');
+
+    // Hollow preexisting file (size > 0 but blocks === 0) -> CONFLICT_MOVE_THEN_DOWNLOAD
+    const hollowLocal = createLocalSnapshot({ size: 500, blocks: 0 });
+    const hollowAction = planSyncItem(item, 'test.pdf', hollowLocal, undefined);
+    expect(hollowAction.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
+    expect(hollowAction.conflictReason).toBe('untracked_conflict');
   });
 
   it('zero-byte files are flagged as isZeroByte without network requirement', () => {

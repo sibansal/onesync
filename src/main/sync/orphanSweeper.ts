@@ -1,9 +1,10 @@
 import { opendir, rmdir } from 'fs/promises';
 import { join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, statSync } from 'fs';
 import { moveToRestored } from '../fs/safeMove';
 import type { RestoredLogRepo } from '../db/logRepo';
 import { logger } from '../logger';
+import { probeFileReadable } from './localScanner';
 
 const IGNORED_NAMES = new Set([
   '.DS_Store',
@@ -20,7 +21,6 @@ function isIgnored(name: string): boolean {
   return false;
 }
 
-import { statSync } from 'fs';
 import type { ItemsRepo } from '../db/itemsRepo';
 
 export interface CloudItemSummary {
@@ -129,7 +129,13 @@ export async function sweepOrphans(options: SweepOptions): Promise<{ movedCount:
             if (matchedItem) {
               try {
                 const s = statSync(childFullPath);
-                if (s.size === matchedItem.size) {
+                const hasAllocatedBlocks =
+                  matchedItem.size === 0 || s.blocks === undefined || s.blocks > 0;
+                if (
+                  s.size === matchedItem.size &&
+                  hasAllocatedBlocks &&
+                  probeFileReadable(childFullPath, matchedItem.size)
+                ) {
                   isEquivalentToCloud = true;
                   if (itemsRepo) {
                     itemsRepo.updateLocalSynced(matchedItem.id, {
