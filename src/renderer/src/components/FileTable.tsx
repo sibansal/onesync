@@ -89,9 +89,17 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
 
 export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+
+  const handleScroll = (): void => {
+    if (containerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 60;
+    }
+  };
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && isNearBottomRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [logs.length]);
@@ -116,6 +124,7 @@ export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Eleme
   return (
     <div
       ref={containerRef}
+      onScroll={handleScroll}
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: '0.8rem',

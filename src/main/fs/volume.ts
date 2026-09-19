@@ -50,11 +50,25 @@ export function verifyMounted(folderPath: string): boolean {
 }
 
 /**
+ * Resolves the top-level volume mount point for any path under /Volumes/.
+ */
+export function getVolumeMountPoint(folderPath: string): string {
+  if (folderPath.startsWith('/Volumes/')) {
+    const parts = folderPath.split('/');
+    if (parts.length >= 3 && parts[2]) {
+      return `/Volumes/${parts[2]}`;
+    }
+  }
+  return folderPath;
+}
+
+/**
  * Inspects filesystem type using macOS diskutil info -plist.
  */
 export async function getFilesystemType(folderPath: string): Promise<string> {
   try {
-    const { stdout } = await execFileAsync('diskutil', ['info', '-plist', folderPath]);
+    const targetPath = getVolumeMountPoint(folderPath);
+    const { stdout } = await execFileAsync('diskutil', ['info', '-plist', targetPath]);
 
     // Parse Plist for FilesystemType / FilesystemName / Type (Bundle)
     const fsNameMatch = /<key>FilesystemName<\/key>\s*<string>([^<]+)<\/string>/i.exec(stdout);
@@ -124,7 +138,7 @@ export function inspectExistingDatabase(folderPath: string): {
 
   let db: Database.Database | null = null;
   try {
-    db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    db = new Database(dbPath, { fileMustExist: true, timeout: 2000 });
     const row = db.prepare("SELECT value FROM meta WHERE key = 'account_id'").get() as
       { value: string } | undefined;
     return { exists: true, accountId: row?.value ?? null };

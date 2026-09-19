@@ -76,7 +76,7 @@ export function DashboardScreen({
 
   useEffect(() => {
     loadTabData();
-  }, [loadTabData]);
+  }, [loadTabData, destinationPath]);
 
   useEffect(() => {
     window.onesync.getSourceFolder().then((folder) => {

@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, renameSync } from 'fs';
+import { existsSync, mkdirSync, renameSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { applyMigrations } from './migrations';
 import { logger } from '../logger';
@@ -32,17 +32,27 @@ export class AppDatabase {
     let sqliteInstance: Database.Database;
 
     const createAndVerifyDb = (): Database.Database => {
-      const inst = new Database(this.dbPath);
-      inst.pragma('journal_mode = DELETE');
-      inst.pragma('synchronous = NORMAL');
+      const inst = new Database(this.dbPath, { timeout: 5000 });
+      try {
+        inst.pragma('busy_timeout = 5000');
+        inst.pragma('journal_mode = DELETE');
+        inst.pragma('synchronous = NORMAL');
 
-      const integrity = inst.pragma('integrity_check') as Array<{ integrity_check: string }>;
-      const isOk = integrity.length > 0 && integrity[0]?.integrity_check === 'ok';
+        const integrity = inst.pragma('integrity_check') as Array<{ integrity_check: string }>;
+        const isOk = integrity.length > 0 && integrity[0]?.integrity_check === 'ok';
 
-      if (!isOk) {
-        throw new Error('state.db failed integrity check');
+        if (!isOk) {
+          throw new Error('state.db failed integrity check');
+        }
+        return inst;
+      } catch (err) {
+        try {
+          inst.close();
+        } catch {
+          // ignore
+        }
+        throw err;
       }
-      return inst;
     };
 
     try {
@@ -57,11 +67,18 @@ export class AppDatabase {
           const corruptPath = join(onesyncDir, `state.db.corrupt-${Date.now()}`);
           renameSync(this.dbPath, corruptPath);
         }
+        const walPath = `${this.dbPath}-wal`;
+        const shmPath = `${this.dbPath}-shm`;
+        const journalPath = `${this.dbPath}-journal`;
+        if (existsSync(walPath)) unlinkSync(walPath);
+        if (existsSync(shmPath)) unlinkSync(shmPath);
+        if (existsSync(journalPath)) unlinkSync(journalPath);
       } catch (renameErr) {
         logger.error('Failed to move corrupted state.db aside:', renameErr);
       }
 
-      sqliteInstance = new Database(this.dbPath);
+      sqliteInstance = new Database(this.dbPath, { timeout: 5000 });
+      sqliteInstance.pragma('busy_timeout = 5000');
       sqliteInstance.pragma('journal_mode = DELETE');
       sqliteInstance.pragma('synchronous = NORMAL');
     }

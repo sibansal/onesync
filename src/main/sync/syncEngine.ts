@@ -90,15 +90,21 @@ export class SyncEngine {
   }
 
   public setDestination(folderPath: string | null): void {
-    this.baseFolder = folderPath;
-    if (this.appDb) {
-      this.appDb.close();
-      this.appDb = null;
-      this.metaRepo = null;
-      this.itemsRepo = null;
-      this.restoredLogRepo = null;
-      this.syncRunsRepo = null;
+    if (this.baseFolder !== folderPath) {
+      this.baseFolder = folderPath;
     }
+    if (this.appDb) {
+      try {
+        this.appDb.close();
+      } catch {
+        // ignore
+      }
+    }
+    this.appDb = null;
+    this.metaRepo = null;
+    this.itemsRepo = null;
+    this.restoredLogRepo = null;
+    this.syncRunsRepo = null;
   }
 
   public setAccount(account: AccountInfo | null): void {
@@ -133,7 +139,11 @@ export class SyncEngine {
 
     try {
       if (this.appDb) {
-        this.appDb.close();
+        try {
+          this.appDb.close();
+        } catch {
+          // ignore
+        }
         this.appDb = null;
         this.metaRepo = null;
         this.itemsRepo = null;
@@ -144,15 +154,17 @@ export class SyncEngine {
       const dbPath = join(this.baseFolder, '.onesync', 'state.db');
       const walPath = `${dbPath}-wal`;
       const shmPath = `${dbPath}-shm`;
+      const journalPath = `${dbPath}-journal`;
 
       if (existsSync(dbPath)) unlinkSync(dbPath);
       if (existsSync(walPath)) unlinkSync(walPath);
       if (existsSync(shmPath)) unlinkSync(shmPath);
+      if (existsSync(journalPath)) unlinkSync(journalPath);
 
       // Re-initialize fresh database
       this.ensureDatabase();
-      if (this.account) {
-        this.metaRepo!.setAccountId(this.account.id);
+      if (this.account && this.metaRepo) {
+        this.metaRepo.setAccountId(this.account.id);
       }
 
       this.currentJobId = null;
@@ -249,13 +261,42 @@ export class SyncEngine {
     if (!this.baseFolder) {
       throw new Error('Destination folder not configured');
     }
-    if (!this.appDb) {
-      this.appDb = new AppDatabase(this.baseFolder);
-      const rawDb = this.appDb.open();
-      this.metaRepo = new MetaRepo(rawDb);
-      this.itemsRepo = new ItemsRepo(rawDb);
-      this.restoredLogRepo = new RestoredLogRepo(rawDb);
-      this.syncRunsRepo = new SyncRunsRepo(rawDb);
+    if (
+      !this.appDb ||
+      !this.syncRunsRepo ||
+      !this.metaRepo ||
+      !this.itemsRepo ||
+      !this.restoredLogRepo
+    ) {
+      if (this.appDb) {
+        try {
+          this.appDb.close();
+        } catch {
+          // ignore
+        }
+      }
+      this.appDb = null;
+      this.metaRepo = null;
+      this.itemsRepo = null;
+      this.restoredLogRepo = null;
+      this.syncRunsRepo = null;
+
+      try {
+        const appDb = new AppDatabase(this.baseFolder);
+        const rawDb = appDb.open();
+        this.appDb = appDb;
+        this.metaRepo = new MetaRepo(rawDb);
+        this.itemsRepo = new ItemsRepo(rawDb);
+        this.restoredLogRepo = new RestoredLogRepo(rawDb);
+        this.syncRunsRepo = new SyncRunsRepo(rawDb);
+      } catch (err) {
+        this.appDb = null;
+        this.metaRepo = null;
+        this.itemsRepo = null;
+        this.restoredLogRepo = null;
+        this.syncRunsRepo = null;
+        throw err;
+      }
     }
   }
 

@@ -55,8 +55,8 @@ export function useSyncState(): {
 
     const unsubLog = window.onesync.onSyncLog((entry) => {
       setLogs((prev) => {
-        const next = [entry, ...prev];
-        return next.length > 200 ? next.slice(0, 200) : next;
+        const next = [...prev, entry];
+        return next.length > 500 ? next.slice(next.length - 500) : next;
       });
     });
 
