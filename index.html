@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneSync — Atomic, One-Way OneDrive Mirror for macOS Apple Silicon</title>
+  <meta name="description" content="OneSync is a high-performance macOS Apple Silicon desktop app that mirrors OneDrive to an external drive with atomic safety, zero cloud deletion risks, and portable SQLite state tracking.">
+  
+  <!-- OpenGraph / Social -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="OneSync — Atomic, One-Way OneDrive Mirror for macOS">
+  <meta property="og:description" content="High-performance macOS Apple Silicon app that mirrors OneDrive to external storage with atomic safety and zero cloud-deletion risks.">
+  <meta property="og:image" content="assets/screenshot-dashboard.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Ambient background glow layers -->
+  <div class="bg-grid"></div>
+  <div class="blob-tl"></div>
+  <div class="blob-br"></div>
+
+  <div class="page-shell">
+    <!-- Navigation Bar -->
+    <header class="site-header">
+      <div class="container nav-container">
+        <a href="index.html" class="brand-link">
+          <img src="assets/icon.png" alt="OneSync Logo" class="brand-icon">
+          <span>OneSync</span>
+          <span class="brand-badge">v1.0.0</span>
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#showcase" class="nav-link">Showcase</a></li>
+          <li><a href="#architecture" class="nav-link">Architecture</a></li>
+          <li><a href="license.html" class="nav-link">License</a></li>
+          <li><a href="https://sibansal.dev/" target="_blank" rel="noopener noreferrer" class="nav-link">sibansal.dev ↗</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <a href="https://github.com/sibansal/onesync" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+          <button class="mobile-toggle" aria-label="Toggle navigation menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main>
+      <section class="hero-section">
+        <div class="container">
+          <div class="hero-pill-wrap">
+            <span class="tag">
+              <span class="status-dot green"></span>
+              macOS Apple Silicon (M1/M2/M3/M4) • v1.0.0
+            </span>
+          </div>
+
+          <h1 class="hero-title">
+            Atomic, one-way OneDrive mirroring <br>
+            <span class="gradient-text">for your external drives.</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            OneSync creates a cryptographic, bit-perfect replica of your cloud files directly to external APFS or exFAT storage. Zero cloud deletion risks, drive-portable SQLite state, and native Apple Silicon acceleration.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="https://github.com/sibansal/onesync/releases" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download for macOS (.dmg)
+            </a>
+            <a href="#showcase" class="btn btn-secondary btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              View Screenshots
+            </a>
+          </div>
+
+          <div class="hero-specs-strip">
+            <div class="hero-spec-item">
+              <span class="status-dot green"></span>
+              <span>OAuth 2.0 PKCE (Read-Only)</span>
+            </div>
+            <div class="hero-spec-item">
+              <span class="status-dot green"></span>
+              <span>Crash-Safe SQLite WAL</span>
+            </div>
+            <div class="hero-spec-item">
+              <span class="status-dot green"></span>
+              <span>External Volume Guardian</span>
+            </div>
+            <div class="hero-spec-item">
+              <span class="status-dot green"></span>
+              <span>QuickXorHash / SHA-256</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screenshot Showcase Section -->
+      <section id="showcase" class="showcase-section">
+        <div class="container">
+          <div class="showcase-header">
+            <div class="section-heading" style="justify-content: center; margin-bottom: 1rem;">
+              <span class="bar"></span>
+              <h2>Product Showcase</h2>
+            </div>
+            <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
+              Designed with a sleek dark aesthetic, native macOS ergonomics, real-time logging, and transparent state auditing.
+            </p>
+
+            <div class="showcase-tabs">
+              <button class="showcase-tab active" data-target="dashboard">
+                Active Sync Dashboard
+              </button>
+              <button class="showcase-tab" data-target="connect">
+                Connect & Auth
+              </button>
+            </div>
+          </div>
+
+          <!-- Mac Window Frame with Interactive Screenshot -->
+          <div class="showcase-window">
+            <div class="window-header">
+              <div class="window-controls">
+                <span class="control-dot dot-red"></span>
+                <span class="control-dot dot-yellow-mac"></span>
+                <span class="control-dot dot-green-mac"></span>
+              </div>
+              <div class="window-title" id="showcase-title">OneSync — Active Sync & Preflight Engine</div>
+              <div class="window-meta">
+                <span class="tag" id="showcase-badge">Real-time Console</span>
+              </div>
+            </div>
+
+            <div class="window-viewport">
+              <img id="showcase-image" src="assets/screenshot-dashboard.png" alt="OneSync Active Sync Dashboard" class="window-image">
+            </div>
+
+            <div class="window-caption">
+              <span id="showcase-caption-text">
+                Real-time sync dashboard showing preflight discovery, hash validation, dynamic console logs, and counters.
+              </span>
+              <span class="window-meta">Apple Silicon Native (arm64)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="features" class="features-section">
+        <div class="container">
+          <div class="section-heading">
+            <span class="bar"></span>
+            <div>
+              <h2>Engineered for Absolute Data Safety</h2>
+              <p>Built from the ground up to solve cloud-mirroring hazards and protect your critical files.</p>
+            </div>
+          </div>
+
+          <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card tilt-card">
+              <div class="feature-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h3 class="feature-title">Strict One-Way Mirror</h3>
+              <p class="feature-desc">
+                Only requests read-only Graph API scopes (<code class="tag">Files.Read</code>, <code class="tag">User.Read</code>). The engine mathematically cannot upload, mutate, or delete a single byte in your cloud OneDrive.
+              </p>
+              <div class="feature-footer">
+                <span class="tag">Zero Cloud Risk</span>
+                <span class="status-dot green"></span>
+              </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-card tilt-card">
+              <div class="feature-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              </div>
+              <h3 class="feature-title">Safe Restored Vault</h3>
+              <p class="feature-desc">
+                Local disk files are never eradicated. If a file was deleted in the cloud or modified locally, OneSync safely quarantines it to <code class="tag">restored/</code> with timestamped preservation.
+              </p>
+              <div class="feature-footer">
+                <span class="tag">No Accidental Deletions</span>
+                <span class="status-dot green"></span>
+              </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-card tilt-card">
+              <div class="feature-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </div>
+              <h3 class="feature-title">Atomic & Resumable Downloads</h3>
+              <p class="feature-desc">
+                Downloads stream into isolated <code class="tag">.onesync/tmp/*.part</code> buffers and are verified using cryptographic hashes before atomic promotion. Interrupted downloads resume via HTTP Range requests.
+              </p>
+              <div class="feature-footer">
+                <span class="tag">QuickXorHash / SHA-256</span>
+                <span class="status-dot green"></span>
+              </div>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="feature-card tilt-card">
+              <div class="feature-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+              <h3 class="feature-title">Drive-Portable SQLite Index</h3>
+              <p class="feature-desc">
+                The entire state database lives in <code class="tag">.onesync/state.db</code> directly on your external volume. Plug the drive into another Mac and your sync history and delta tracking resume immediately.
+              </p>
+              <div class="feature-footer">
+                <span class="tag">WAL Mode Sync</span>
+                <span class="status-dot green"></span>
+              </div>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="feature-card tilt-card">
+              <div class="feature-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              </div>
+              <h3 class="feature-title">External Volume Guardian</h3>
+              <p class="feature-desc">
+                Before initiating a job, OneSync enforces strict checks verifying that the destination is mounted on an external disk under <code class="tag">/Volumes/</code> with a distinctive filesystem ID, saving your Mac SSD.
+              </p>
+              <div class="feature-footer">
+                <span class="tag">Internal Storage Guard</span>
+                <span class="status-dot green"></span>
+              </div>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="feature-card tilt-card">
+              <div class="feature-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <h3 class="feature-title">macOS Keychain Security</h3>
+              <p class="feature-desc">
+                Session tokens are protected using Electron's hardened <code class="tag">safeStorage</code> encryption tied to the macOS Keychain. Zero plain-text credentials stored on disk.
+              </p>
+              <div class="feature-footer">
+                <span class="tag">Apple Silicon Native</span>
+                <span class="status-dot green"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture Section -->
+      <section id="architecture" class="arch-section">
+        <div class="container">
+          <div class="section-heading">
+            <span class="bar"></span>
+            <div>
+              <h2>How Synchronization Executes</h2>
+              <p>Predictable 5-stage pipeline designed for multi-gigabyte files and deep directory trees.</p>
+            </div>
+          </div>
+
+          <div class="arch-container">
+            <!-- Timeline Steps -->
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-num">01</div>
+                <div class="step-content">
+                  <h3>Preflight Verification</h3>
+                  <p>Validates target path device ID, verifies external mount point, ensures write permissions, and initializes the local SQLite schema.</p>
+                </div>
+              </div>
+
+              <div class="step-item">
+                <div class="step-num">02</div>
+                <div class="step-content">
+                  <h3>Remote & Local Delta Discovery</h3>
+                  <p>Recursively traverses remote OneDrive delta endpoints alongside the local disk index to detect new, modified, and removed files.</p>
+                </div>
+              </div>
+
+              <div class="step-item">
+                <div class="step-num">03</div>
+                <div class="step-content">
+                  <h3>Pure Synchronization Planning</h3>
+                  <p>A pure deterministic planning function compares item hashes and timestamps, generating explicit download, skip, or restore-move actions.</p>
+                </div>
+              </div>
+
+              <div class="step-item">
+                <div class="step-num">04</div>
+                <div class="step-content">
+                  <h3>Parallel Transfer & Stream Hashing</h3>
+                  <p>A bounded concurrency worker pool streams downloads to temporary files while computing on-the-fly hashes with backoff retry handling.</p>
+                </div>
+              </div>
+
+              <div class="step-item">
+                <div class="step-num">05</div>
+                <div class="step-content">
+                  <h3>Atomic Swap & Transaction Commit</h3>
+                  <p>Files are atomically renamed to their destination path, file metadata is written into SQLite, and UI counters update in real time.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminal Visualizer -->
+            <div class="terminal-card tilt-card">
+              <div class="terminal-header">
+                <span>onesync-engine // audit-log</span>
+                <span class="status-dot green"></span>
+              </div>
+              <div class="terminal-body">
+                <div class="terminal-line">
+                  <span class="terminal-prompt">$</span>
+                  <span class="terminal-highlight">onesync --job-id 5 --target /Volumes/DISK6/OneDrive</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-comment">[10:55:16 PM] [INFO] Target volume verified: external APFS (dev: 16777232)</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-comment">[10:55:18 PM] [INFO] Discovered 24564 cloud items...</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-comment">[10:55:25 PM] [INFO] Discovered 26129 cloud items...</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-comment">[10:55:49 PM] [INFO] Discovered 29956 cloud items...</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-success">[10:55:50 PM] [PLAN] 12 pending downloads, 29944 up to date, 0 orphaned</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-comment">[10:55:52 PM] [SYNC] Downloading /Videos/Archive_4K.mov (4.2 GB)...</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-success">[10:56:12 PM] [HASH] QuickXorHash verified: a1f8...93b2 -> atomic rename OK</span>
+                </div>
+                <div class="terminal-line">
+                  <span class="terminal-highlight">[10:56:13 PM] [COMMIT] Job #5 completed. State database synced.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA Section -->
+      <section class="cta-section">
+        <div class="container">
+          <div class="cta-box">
+            <h2 class="cta-title">Safeguard Your Cloud Data Today</h2>
+            <p class="cta-desc">
+              Free, open source, and built specifically for macOS Apple Silicon. Keep a dependable offline replica of your cloud without risk.
+            </p>
+            <div class="hero-cta-group" style="margin-bottom: 0;">
+              <a href="https://github.com/sibansal/onesync/releases" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download OneSync for macOS
+              </a>
+              <a href="https://github.com/sibansal/onesync" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
+                View Source on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <h4>
+              <img src="assets/icon.png" alt="OneSync Icon" style="width: 22px; height: 22px; border-radius: 4px;">
+              OneSync
+            </h4>
+            <p>
+              An atomic, one-way OneDrive mirror desktop app engineered for macOS Apple Silicon and external storage safety.
+            </p>
+            <div class="tag">
+              <span class="status-dot green"></span>
+              Open Source Desktop Mirror
+            </div>
+          </div>
+
+          <div class="footer-col">
+            <h5>Navigation</h5>
+            <ul class="footer-links">
+              <li><a href="#features" class="footer-link">Features</a></li>
+              <li><a href="#showcase" class="footer-link">Showcase</a></li>
+              <li><a href="#architecture" class="footer-link">Architecture</a></li>
+              <li><a href="https://github.com/sibansal/onesync/releases" class="footer-link" target="_blank" rel="noopener noreferrer">Releases</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Legal & Terms</h5>
+            <ul class="footer-links">
+              <li><a href="terms.html" class="footer-link">Terms of Service</a></li>
+              <li><a href="privacy.html" class="footer-link">Privacy Statement</a></li>
+              <li><a href="license.html" class="footer-link">MIT License</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Ecosystem</h5>
+            <ul class="footer-links">
+              <li><a href="https://sibansal.dev/" class="footer-link" target="_blank" rel="noopener noreferrer">sibansal.dev ↗</a></li>
+              <li><a href="https://github.com/sibansal" class="footer-link" target="_blank" rel="noopener noreferrer">GitHub Profile ↗</a></li>
+              <li><a href="https://github.com/sibansal/onesync" class="footer-link" target="_blank" rel="noopener noreferrer">OneSync Repo ↗</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>
+            &copy; 2026 OneSync. All rights reserved. Licensed under the MIT License.
+          </div>
+          <div class="footer-author">
+            Crafted by <a href="https://sibansal.dev/" target="_blank" rel="noopener noreferrer">sibansal.dev</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

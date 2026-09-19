@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — OneSync</title>
+  <meta name="description" content="Terms of Service for the OneSync desktop application and website.">
+
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="blob-tl"></div>
+  <div class="blob-br"></div>
+
+  <div class="page-shell">
+    <header class="site-header">
+      <div class="container nav-container">
+        <a href="index.html" class="brand-link">
+          <img src="assets/icon.png" alt="OneSync Logo" class="brand-icon">
+          <span>OneSync</span>
+          <span class="brand-badge">v1.0.0</span>
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="index.html#features" class="nav-link">Features</a></li>
+          <li><a href="index.html#showcase" class="nav-link">Showcase</a></li>
+          <li><a href="privacy.html" class="nav-link">Privacy Statement</a></li>
+          <li><a href="license.html" class="nav-link">License</a></li>
+          <li><a href="https://sibansal.dev/" target="_blank" rel="noopener noreferrer" class="nav-link">sibansal.dev ↗</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <a href="index.html" class="btn btn-secondary">
+            ← Back to Home
+          </a>
+          <button class="mobile-toggle" aria-label="Toggle navigation menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="legal-page-header">
+        <div class="legal-breadcrumb">
+          <a href="index.html">Home</a>
+          <span>/</span>
+          <span>Terms of Service</span>
+        </div>
+        <h1 class="legal-title">Terms of Service</h1>
+        <div class="legal-meta">
+          <span>Last Updated: September 19, 2026</span>
+        </div>
+      </div>
+
+      <article class="legal-content">
+        <div class="legal-box highlight">
+          <p style="margin: 0; font-weight: 500;">
+            OneSync is an open-source, client-side macOS desktop application engineered by <a href="https://sibansal.dev/" target="_blank" rel="noopener noreferrer">sibansal.dev</a>. By downloading, compiling, or using the OneSync software and this website, you acknowledge and agree to the terms described herein.
+          </p>
+        </div>
+
+        <h2>1. Scope & License Agreement</h2>
+        <p>
+          OneSync is provided as open-source software under the terms of the <strong>MIT License</strong>. You are free to view, copy, inspect, modify, merge, publish, and distribute copies of the software in accordance with the license conditions. The full text of the license is available on our <a href="license.html">License Page</a>.
+        </p>
+
+        <h2>2. Architecture & One-Way Mirroring Guarantee</h2>
+        <p>
+          OneSync is designed strictly as a <strong>one-way cloud-to-local synchronization and backup client</strong>. The application uses only read-level OAuth permissions (specifically <code>Files.Read</code> and <code>User.Read</code>). Under no operational state does OneSync upload local modifications back to your Microsoft OneDrive cloud, nor does it issue deletion, rename, or alteration requests against remote OneDrive storage.
+        </p>
+        <p>
+          While OneSync implements atomic downloads via temporary files, cryptographic verification (SHA-256 and QuickXorHash), and quarantines displaced local files to a dedicated <code>restored/</code> folder, users remain responsible for maintaining adequate backups of their hardware and storage devices.
+        </p>
+
+        <h2>3. Third-Party Services (Microsoft OneDrive & Graph API)</h2>
+        <p>
+          To function, OneSync interfaces directly with Microsoft Entra ID and the Microsoft Graph API. Your use of Microsoft OneDrive, authentication accounts, bandwidth allotments, and cloud storage quotas is independently governed by Microsoft's Services Agreement and Microsoft Privacy Policies.
+        </p>
+        <ul>
+          <li>OneSync is an independent project and is not endorsed, sponsored, or affiliated with Microsoft Corporation.</li>
+          <li>Users must comply with Microsoft API Terms of Use when utilizing personal, school, or organizational Entra ID credentials.</li>
+        </ul>
+
+        <h2>4. User Responsibilities & Hardware Management</h2>
+        <p>You agree and acknowledge that:</p>
+        <ul>
+          <li>You are responsible for selecting valid, healthy destination drives formatted with appropriate filesystems (such as APFS or exFAT) and maintaining sufficient free storage.</li>
+          <li>You are responsible for securing physical access to your external hard drives and Mac workstation.</li>
+          <li>You must comply with all applicable local, national, and international laws regarding data ownership, copyright, and storage.</li>
+        </ul>
+
+        <h2>5. Disclaimer of Warranties</h2>
+        <div class="license-block">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div>
+
+        <h2>6. Limitation of Liability</h2>
+        <p>
+          To the maximum extent permitted by applicable law, in no event shall the author (<a href="https://sibansal.dev/">sibansal.dev</a>) or contributors be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to loss of data, loss of business, hardware failure, or external drive corruption arising out of or related to your use of or inability to use the software.
+        </p>
+
+        <h2>7. Modifications to Terms</h2>
+        <p>
+          We may revise these Terms of Service periodically to reflect updates to software capabilities, legal requirements, or platform features. The updated terms will be posted directly to this page with an updated revision date.
+        </p>
+
+        <h2>8. Contact & Creator Information</h2>
+        <p>
+          For questions regarding these Terms or the OneSync project, please visit the developer portal at <a href="https://sibansal.dev/" target="_blank" rel="noopener noreferrer">sibansal.dev</a> or participate via public discussions on the <a href="https://github.com/sibansal/onesync" target="_blank" rel="noopener noreferrer">OneSync GitHub repository</a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <h4>
+              <img src="assets/icon.png" alt="OneSync Icon" style="width: 22px; height: 22px; border-radius: 4px;">
+              OneSync
+            </h4>
+            <p>
+              An atomic, one-way OneDrive mirror desktop app engineered for macOS Apple Silicon and external storage safety.
+            </p>
+            <div class="tag">
+              <span class="status-dot green"></span>
+              Open Source Desktop Mirror
+            </div>
+          </div>
+
+          <div class="footer-col">
+            <h5>Navigation</h5>
+            <ul class="footer-links">
+              <li><a href="index.html#features" class="footer-link">Features</a></li>
+              <li><a href="index.html#showcase" class="footer-link">Showcase</a></li>
+              <li><a href="index.html#architecture" class="footer-link">Architecture</a></li>
+              <li><a href="https://github.com/sibansal/onesync/releases" class="footer-link" target="_blank" rel="noopener noreferrer">Releases</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Legal & Terms</h5>
+            <ul class="footer-links">
+              <li><a href="terms.html" class="footer-link" style="color: var(--accent-100);">Terms of Service</a></li>
+              <li><a href="privacy.html" class="footer-link">Privacy Statement</a></li>
+              <li><a href="license.html" class="footer-link">MIT License</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Ecosystem</h5>
+            <ul class="footer-links">
+              <li><a href="https://sibansal.dev/" class="footer-link" target="_blank" rel="noopener noreferrer">sibansal.dev ↗</a></li>
+              <li><a href="https://github.com/sibansal" class="footer-link" target="_blank" rel="noopener noreferrer">GitHub Profile ↗</a></li>
+              <li><a href="https://github.com/sibansal/onesync" class="footer-link" target="_blank" rel="noopener noreferrer">OneSync Repo ↗</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>
+            &copy; 2026 OneSync. All rights reserved. Licensed under the MIT License.
+          </div>
+          <div class="footer-author">
+            Crafted by <a href="https://sibansal.dev/" target="_blank" rel="noopener noreferrer">sibansal.dev</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
