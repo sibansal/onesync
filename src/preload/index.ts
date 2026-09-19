@@ -81,6 +81,11 @@ const api: OneSyncAPI = {
 
   openAbout: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_OPEN_ABOUT),
 
+  getPreventSleep: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_PREVENT_SLEEP),
+
+  setPreventSleep: (enabled: boolean): Promise<boolean> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_SET_PREVENT_SLEEP, enabled),
+
   onSyncState: (callback: (state: SyncState) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, state: SyncState): void => callback(state);
     ipcRenderer.on(IPC_CHANNELS.EVENT_SYNC_STATE, handler);

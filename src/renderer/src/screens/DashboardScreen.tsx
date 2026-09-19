@@ -56,6 +56,8 @@ export function DashboardScreen({
   const [loadingFolders, setLoadingFolders] = useState(false);
   const [customSourceInput, setCustomSourceInput] = useState('');
   const [statusNotification, setStatusNotification] = useState<string | null>(null);
+  const [preventSleep, setPreventSleep] = useState<boolean>(false);
+  const [isHoveringSleep, setIsHoveringSleep] = useState<boolean>(false);
 
   const loadTabData = useCallback(async () => {
     try {
@@ -83,7 +85,26 @@ export function DashboardScreen({
       setSourceFolder(folder);
       setCustomSourceInput(folder || '');
     });
+    window.onesync.getPreventSleep?.().then((active) => {
+      setPreventSleep(Boolean(active));
+    });
   }, []);
+
+  const handleTogglePreventSleep = async (): Promise<void> => {
+    try {
+      const nextState = !preventSleep;
+      const result = await window.onesync.setPreventSleep(nextState);
+      setPreventSleep(result);
+      setStatusNotification(
+        result
+          ? 'System sleep prevented (Awake mode active)'
+          : 'System sleep allowed (Normal power mode)',
+      );
+      setTimeout(() => setStatusNotification(null), 3000);
+    } catch (err) {
+      console.error('Failed to toggle sleep prevention:', err);
+    }
+  };
 
   const isCancelledState =
     Boolean(syncState.isCancelled) ||
@@ -376,6 +397,100 @@ export function DashboardScreen({
               Sync Now
             </button>
           )}
+
+          {/* Prevent Sleep (Keep Awake) Toggle */}
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+            <button
+              onClick={handleTogglePreventSleep}
+              onMouseEnter={() => setIsHoveringSleep(true)}
+              onMouseLeave={() => setIsHoveringSleep(false)}
+              aria-label={preventSleep ? 'Prevent system sleep: On' : 'Prevent system sleep: Off'}
+              title={
+                preventSleep
+                  ? 'Preventing system sleep (Active) — Click to allow sleep'
+                  : 'Prevent system from sleep — Click to keep awake'
+              }
+              style={{
+                padding: '0.45rem 0.6rem',
+                background: preventSleep
+                  ? 'rgba(234, 179, 8, 0.15)'
+                  : 'var(--bg-surface-elevated)',
+                border: preventSleep
+                  ? '1px solid rgba(234, 179, 8, 0.5)'
+                  : '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-sm)',
+                color: preventSleep ? '#f59e0b' : 'var(--text-secondary)',
+                fontSize: '0.9rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={preventSleep ? '#f59e0b' : 'none'}
+                stroke={preventSleep ? '#f59e0b' : 'currentColor'}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  filter: preventSleep ? 'drop-shadow(0 0 4px rgba(245, 158, 11, 0.7))' : 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="m4.93 4.93 1.41 1.41" />
+                <path d="m17.66 17.66 1.41 1.41" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+                <path d="m6.34 17.66-1.41 1.41" />
+                <path d="m19.07 4.93-1.41 1.41" />
+              </svg>
+            </button>
+
+            {isHoveringSleep && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '120%',
+                  right: 0,
+                  background: 'var(--bg-surface-elevated, #1f2937)',
+                  color: 'var(--text-primary, #f9fafb)',
+                  border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  padding: '0.35rem 0.65rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  boxShadow: 'var(--shadow-md, 0 4px 14px rgba(0, 0, 0, 0.4))',
+                  zIndex: 150,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: preventSleep ? '#f59e0b' : 'var(--text-muted, #9ca3af)',
+                  }}
+                />
+                {preventSleep
+                  ? 'Prevent system sleep (Active)'
+                  : 'Prevent system sleep (Inactive)'}
+              </div>
+            )}
+          </div>
 
           {/* Settings / Overflow menu toggle */}
           <button
