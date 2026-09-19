@@ -108,7 +108,9 @@ CREATE TABLE sync_runs (
 - `GET /me/drive/items/{id}?$select=id,@microsoft.graph.downloadUrl`: Pre-download direct link retrieval.
 
 ### Gotchas & Defenses
-- **Source Folder Scoping:** When a single directory is selected (e.g. `/Documents`), Graph API is queried via `GET /me/drive/root:/Documents:/delta`. Changing source folder resets `delta_link` to initiate a full re-scan of the new folder.
+- **Source Folder Scoping & App Restarts:** When a single directory is selected (e.g. `/Documents`), Graph API is queried via `GET /me/drive/root:/Documents:/delta`. Changing source folder resets `delta_link` to initiate a full re-scan of the new folder. On application launch, settings restoration reconciles against the persisted `source_folder` in SQLite `meta`, guaranteeing that reboots with the same folder scope never wipe the database catalog or clear delta links.
+- **Delta Link Fallback & Sanitization:** `delta_link` values in `meta` are strictly sanitized: empty or whitespace strings are treated as `null`. When `deltaLink` is null, Graph delta automatically falls back to `baseDeltaUrl` and flags `isFullListing = true`.
+- **Pre-existing File Preservation & Equivalence:** In Stage 5 (Sweep), files present on disk that have no prior database record are compared against cloud items (with APFS case-insensitivity support and sub-millisecond boundary read probes). If equivalent and healthy, they are preserved and adopted as synced rather than swept to `restored/`.
 - **Job ID Tracking:** Every sync job is assigned an incremental `Job #<id>` tied directly to `sync_runs.id`. This Job ID is included in `SyncState` and `SyncProgress` and surfaced across all logs and UI views.
 - **Paging:** Delta tokens are saved only after traversing all `@odata.nextLink` until `@odata.deltaLink`.
 - **Missing Paths:** `parentReference.path` is omitted in delta tokens; relative paths are reconstructed via in-memory parent-id walking.

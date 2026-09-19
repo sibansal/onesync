@@ -65,13 +65,14 @@ export class GraphDrive implements RemoteDrive {
     checkPause?: () => Promise<void>,
     sourceFolder?: string | null,
   ): Promise<{ deltaLink: string; isFullListing: boolean }> {
-    let isFullListing = !deltaLink;
+    const effectiveDeltaLink = deltaLink && deltaLink.trim() !== '' ? deltaLink.trim() : null;
+    let isFullListing = !effectiveDeltaLink;
     const cleanedPath = sourceFolder ? sourceFolder.replace(/^\/+|\/+$/g, '') : '';
     const baseDeltaUrl = cleanedPath
       ? `${config.graphBaseUrl}/me/drive/root:/${encodeURI(cleanedPath)}:/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`
       : `${config.graphBaseUrl}/me/drive/root/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`;
 
-    const initialUrl = deltaLink ?? baseDeltaUrl;
+    const initialUrl = effectiveDeltaLink || baseDeltaUrl;
 
     let nextUrl: string | null = initialUrl;
     let finalDeltaLink = '';

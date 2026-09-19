@@ -30,14 +30,15 @@ export class MetaRepo {
   }
 
   public getDeltaLink(): string | null {
-    return this.get('delta_link');
+    const val = this.get('delta_link');
+    return val && val.trim() !== '' ? val.trim() : null;
   }
 
   public setDeltaLink(link: string | null): void {
-    if (link === null) {
+    if (link === null || link.trim() === '') {
       this.db.prepare("DELETE FROM meta WHERE key = 'delta_link'").run();
     } else {
-      this.set('delta_link', link);
+      this.set('delta_link', link.trim());
     }
   }
 
@@ -51,14 +52,15 @@ export class MetaRepo {
   }
 
   public getSourceFolder(): string | null {
-    return this.get('source_folder');
+    const val = this.get('source_folder');
+    return val && val.trim() !== '' ? val.trim() : null;
   }
 
   public setSourceFolder(folder: string | null): void {
-    if (folder === null || folder === '') {
+    if (folder === null || folder.trim() === '') {
       this.db.prepare("DELETE FROM meta WHERE key = 'source_folder'").run();
     } else {
-      this.set('source_folder', folder);
+      this.set('source_folder', folder.trim());
     }
   }
 }
