@@ -140,7 +140,7 @@ Definitions:
 | 7 | `L` exists, fingerprint unchanged, size matches, mtime differs | Hash-verify `L`: match → update DB (`SKIP`); mismatch → move to `restored/` (`local_modified`), then `DOWNLOAD` |
 | 8 | `L` exists, fingerprint changed, `L` matches `D` (unmodified locally) | `DOWNLOAD` (atomic replacement) |
 | 9 | `L` exists, fingerprint changed and `L` differs from `D`, or size/hash mismatch | Move to `restored/` (`local_modified`), then `DOWNLOAD` |
-| 10 | `L` exists but no DB record | Hash-verify against remote: match → `ADOPT` (record in DB); mismatch → move to `restored/` (`untracked_conflict`), then `DOWNLOAD` |
+| 10 | `L` exists but no DB record (pre-existing file in dir) | If healthy (matching size): mark as `SKIP` (recorded in DB as `synced`, no action on file); if mismatch: move to `restored/` (`untracked_conflict`), then `DOWNLOAD` |
 
 ---
 

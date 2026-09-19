@@ -156,21 +156,30 @@ describe('Planner - 10-Row Decision Matrix', () => {
     expect(action.conflictReason).toBe('local_modified');
   });
 
-  it('Row 10: L exists but no DB record -> ADOPT on hash match; CONFLICT_MOVE on mismatch', () => {
+  it('Row 10: L exists but no DB record -> SKIP on healthy; CONFLICT_MOVE on mismatch', () => {
     const item = createMockDbItem({
       status: 'pending',
       local_path: null,
+      size: 500,
       fingerprint: 'hash_xyz',
     });
 
-    const matchLocal = createLocalSnapshot({ hash: 'hash_xyz' });
-    const adoptAction = planSyncItem(item, 'test.pdf', matchLocal, undefined);
-    expect(adoptAction.type).toBe('ADOPT');
+    // Available file in dir is healthy (matching size) -> mark as SKIP
+    const healthyLocal = createLocalSnapshot({ size: 500 });
+    const skipAction = planSyncItem(item, 'test.pdf', healthyLocal, undefined);
+    expect(skipAction.type).toBe('SKIP');
+    expect(skipAction.reason).toBe('healthy');
 
-    const mismatchLocal = createLocalSnapshot({ hash: 'hash_other' });
-    const conflictAction = planSyncItem(item, 'test.pdf', mismatchLocal, undefined);
-    expect(conflictAction.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
-    expect(conflictAction.conflictReason).toBe('untracked_conflict');
+    // Mismatched hash or size -> CONFLICT_MOVE_THEN_DOWNLOAD
+    const mismatchHashLocal = createLocalSnapshot({ size: 500, hash: 'hash_other' });
+    const conflictHashAction = planSyncItem(item, 'test.pdf', mismatchHashLocal, undefined);
+    expect(conflictHashAction.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
+    expect(conflictHashAction.conflictReason).toBe('untracked_conflict');
+
+    const mismatchSizeLocal = createLocalSnapshot({ size: 999 });
+    const conflictSizeAction = planSyncItem(item, 'test.pdf', mismatchSizeLocal, undefined);
+    expect(conflictSizeAction.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
+    expect(conflictSizeAction.conflictReason).toBe('untracked_conflict');
   });
 
   it('zero-byte files are flagged as isZeroByte without network requirement', () => {

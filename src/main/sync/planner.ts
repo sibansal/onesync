@@ -137,30 +137,26 @@ export function planSyncItem(
   const hasDbRecord = item.status === 'synced' && item.local_path !== null;
   const fingerprintUnchanged = fingerprint !== null && fingerprint === syncedFingerprint;
 
-  // 10. L exists but NO DB record (DB lost/corrupt, or user copied files in)
+  // 10. L exists but NO DB record (file available in dir, but not added in db yet)
   if (!hasDbRecord) {
-    if (localItem.hash) {
-      const match =
-        (item.fingerprint && localItem.hash === item.fingerprint) ||
-        (!item.hash_type && localItem.size === item.size);
-      if (match) {
-        return {
-          type: 'ADOPT',
-          item,
-          desiredPath,
-        };
-      }
+    const isSizeMatch = localItem.isFile && localItem.size === item.size;
+    const isHashMismatch = Boolean(
+      localItem.hash && item.fingerprint && localItem.hash !== item.fingerprint,
+    );
+
+    if (isSizeMatch && !isHashMismatch) {
+      // Available file is healthy -> mark as skipped file, make no action on file
       return {
-        type: 'CONFLICT_MOVE_THEN_DOWNLOAD',
+        type: 'SKIP',
         item,
         desiredPath,
-        conflictReason: 'untracked_conflict',
-        isZeroByte,
+        reason: 'healthy',
       };
     }
-    // Need hash verification before adopting
+
+    // Mismatched -> move existing to restored/ then download fresh cloud file
     return {
-      type: 'VERIFY_THEN_ACT',
+      type: 'CONFLICT_MOVE_THEN_DOWNLOAD',
       item,
       desiredPath,
       conflictReason: 'untracked_conflict',

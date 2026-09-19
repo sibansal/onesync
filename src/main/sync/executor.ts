@@ -133,11 +133,24 @@ export async function executePlan(
 
       try {
         switch (action.type) {
-          case 'SKIP':
+          case 'SKIP': {
+            if (item.status !== 'synced' || item.local_path !== desiredPath) {
+              if (existsSync(targetFullPath)) {
+                const s = statSync(targetFullPath);
+                itemsRepo.updateLocalSynced(item.id, {
+                  localPath: desiredPath,
+                  localSize: s.size,
+                  localMtimeMs: Math.round(s.mtimeMs),
+                  syncedFingerprint: item.fingerprint,
+                  syncedAt: Date.now(),
+                });
+              }
+            }
             upToDateCount++;
             filesDone++;
             reportProgress();
             break;
+          }
 
           case 'FAIL_PERMANENT':
             itemsRepo.markFailedPermanent(item.id, {
