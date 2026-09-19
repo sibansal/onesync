@@ -6,6 +6,7 @@ import { DestinationScreen } from './screens/DestinationScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { Footer } from './components/Footer';
 import { AboutModal } from './components/AboutModal';
+import appLogo from './assets/icon.png';
 
 export default function App(): React.JSX.Element {
   const { loading, signedIn, account, quota, signOut, refreshStatus } = useAuth();
@@ -114,7 +115,7 @@ export default function App(): React.JSX.Element {
           title="About OneSync"
         >
           <img
-            src="/icon.png"
+            src={appLogo}
             onError={(e) => {
               (e.target as HTMLElement).style.display = 'none';
             }}
