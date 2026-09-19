@@ -50,11 +50,25 @@ export function verifyMounted(folderPath: string): boolean {
 }
 
 /**
+ * Resolves the top-level volume mount point for any path under /Volumes/.
+ */
+export function getVolumeMountPoint(folderPath: string): string {
+  if (folderPath.startsWith('/Volumes/')) {
+    const parts = folderPath.split('/');
+    if (parts.length >= 3 && parts[2]) {
+      return `/Volumes/${parts[2]}`;
+    }
+  }
+  return folderPath;
+}
+
+/**
  * Inspects filesystem type using macOS diskutil info -plist.
  */
 export async function getFilesystemType(folderPath: string): Promise<string> {
   try {
-    const { stdout } = await execFileAsync('diskutil', ['info', '-plist', folderPath]);
+    const targetPath = getVolumeMountPoint(folderPath);
+    const { stdout } = await execFileAsync('diskutil', ['info', '-plist', targetPath]);
 
     // Parse Plist for FilesystemType / FilesystemName / Type (Bundle)
     const fsNameMatch = /<key>FilesystemName<\/key>\s*<string>([^<]+)<\/string>/i.exec(stdout);
@@ -124,10 +138,9 @@ export function inspectExistingDatabase(folderPath: string): {
 
   let db: Database.Database | null = null;
   try {
-    db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    db = new Database(dbPath, { fileMustExist: true, timeout: 2000 });
     const row = db.prepare("SELECT value FROM meta WHERE key = 'account_id'").get() as
-      | { value: string }
-      | undefined;
+      { value: string } | undefined;
     return { exists: true, accountId: row?.value ?? null };
   } catch (err) {
     logger.warn('Could not read existing state.db metadata:', err);
@@ -148,7 +161,7 @@ export function inspectExistingDatabase(folderPath: string): {
  */
 export async function validateDestination(
   folderPath: string,
-  expectedAccountId?: string | null
+  expectedAccountId?: string | null,
 ): Promise<DestinationValidation> {
   const errors: string[] = [];
 
@@ -163,7 +176,7 @@ export async function validateDestination(
       existingDb: false,
       existingAccount: null,
       isValid: false,
-      errors: ['Selected path does not exist.']
+      errors: ['Selected path does not exist.'],
     };
   }
 
@@ -174,7 +187,9 @@ export async function validateDestination(
 
   const writable = testWritable(folderPath);
   if (!writable) {
-    errors.push('Selected folder is not writable (volume might be formatted as NTFS or read-only).');
+    errors.push(
+      'Selected folder is not writable (volume might be formatted as NTFS or read-only).',
+    );
   }
 
   const fsType = await getFilesystemType(folderPath);
@@ -184,7 +199,7 @@ export async function validateDestination(
 
   if (existingDb && existingAccount && expectedAccountId && existingAccount !== expectedAccountId) {
     errors.push(
-      `Folder contains OneSync data for a different account (${existingAccount}). Please choose an empty folder or sign in with that account.`
+      `Folder contains OneSync data for a different account (${existingAccount}). Please choose an empty folder or sign in with that account.`,
     );
   }
 
@@ -198,6 +213,6 @@ export async function validateDestination(
     existingDb,
     existingAccount,
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }

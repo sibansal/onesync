@@ -9,14 +9,15 @@ export class MetaRepo {
 
   public get(key: string): string | null {
     const row = this.db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as
-      | { value: string }
-      | undefined;
+      { value: string } | undefined;
     return row?.value ?? null;
   }
 
   public set(key: string, value: string): void {
     this.db
-      .prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
+      .prepare(
+        'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      )
       .run(key, value);
   }
 
@@ -48,4 +49,17 @@ export class MetaRepo {
   public setLastSyncAt(timestamp: number): void {
     this.set('last_sync_at', String(timestamp));
   }
+
+  public getSourceFolder(): string | null {
+    return this.get('source_folder');
+  }
+
+  public setSourceFolder(folder: string | null): void {
+    if (folder === null || folder === '') {
+      this.db.prepare("DELETE FROM meta WHERE key = 'source_folder'").run();
+    } else {
+      this.set('source_folder', folder);
+    }
+  }
 }
+

@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { rmSync, mkdirSync, existsSync, writeFileSync, readFileSync, unlinkSync, readdirSync } from 'fs';
+import {
+  rmSync,
+  mkdirSync,
+  existsSync,
+  writeFileSync,
+  readFileSync,
+  unlinkSync,
+  readdirSync,
+} from 'fs';
 import { join } from 'path';
 import { SyncEngine } from '../src/main/sync/syncEngine';
 import { MockDrive } from '../src/main/onedrive/mockDrive';
@@ -15,7 +23,7 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     onStateChange: vi.fn(),
     onProgress: vi.fn(),
     onLog: vi.fn(),
-    onDriveStatus: vi.fn()
+    onDriveStatus: vi.fn(),
   };
 
   beforeEach(() => {
@@ -30,7 +38,7 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     engine.setAccount({
       id: 'mock_user_account_id',
       name: 'Mock User',
-      email: 'mock@example.com'
+      email: 'mock@example.com',
     });
   });
 
@@ -130,7 +138,9 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     mockDrive.modifyFile('f1', 'Version 2 (Cloud Updated)');
     await engine.startSync();
 
-    expect(readFileSync(join(testDir, 'onedrive', 'note.txt'), 'utf-8')).toBe('Version 2 (Cloud Updated)');
+    expect(readFileSync(join(testDir, 'onedrive', 'note.txt'), 'utf-8')).toBe(
+      'Version 2 (Cloud Updated)',
+    );
     // Since local was untouched, it was replaced atomically without moving to restored/
     expect(existsSync(join(testDir, 'restored', 'note.txt'))).toBe(false);
   });
@@ -144,10 +154,14 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     await engine.startSync();
 
     // Fresh cloud version downloaded
-    expect(readFileSync(join(testDir, 'onedrive', 'contract.txt'), 'utf-8')).toBe('Cloud Contract V1');
+    expect(readFileSync(join(testDir, 'onedrive', 'contract.txt'), 'utf-8')).toBe(
+      'Cloud Contract V1',
+    );
     // User modified version safely sheltered in restored/
     expect(existsSync(join(testDir, 'restored', 'contract.txt'))).toBe(true);
-    expect(readFileSync(join(testDir, 'restored', 'contract.txt'), 'utf-8')).toBe('User Altered Contract Locally');
+    expect(readFileSync(join(testDir, 'restored', 'contract.txt'), 'utf-8')).toBe(
+      'User Altered Contract Locally',
+    );
   });
 
   it('E9: DB deleted, files intact -> adopted by hash, no re-download', async () => {
@@ -241,7 +255,7 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     engine.setAccount({
       id: 'second_user_account',
       name: 'Second User',
-      email: 'second@example.com'
+      email: 'second@example.com',
     });
 
     const res = await engine.startSync();
@@ -291,15 +305,21 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
         name: 'large.bin',
         isFolder: false,
         size: fullContent.length,
-        fingerprint: (mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }).items.get('large_file')!.item.fingerprint,
+        fingerprint: (
+          mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }
+        ).items.get('large_file')!.item.fingerprint,
         hashType: 'sha256',
-        remoteModified: null
-      }
+        remoteModified: null,
+      },
     ]);
 
     const tmpDir = join(testDir, '.onesync', 'tmp');
     mkdirSync(tmpDir, { recursive: true });
-    const fpPrefix = (mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }).items.get('large_file')!.item.fingerprint.slice(0, 8);
+    const fpPrefix = (
+      mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }
+    ).items
+      .get('large_file')!
+      .item.fingerprint.slice(0, 8);
     const partPath = join(tmpDir, `large_file-${fpPrefix}.part`);
     writeFileSync(partPath, fullContent.slice(0, 5000));
 

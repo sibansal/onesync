@@ -58,10 +58,26 @@ OneSync provides a bulletproof, **one-way mirror** of OneDrive onto an external 
 - **I want to** observe real-time sync progress, download speeds, and active file transfers,
 - **So that** I can track synchronization and control execution.
 - **Acceptance Criteria:**
-  - Displays phase indicator, files completed/total, bytes completed/total, transfer speed, and ETA.
+  - Displays unique Job ID (e.g., `Job #1`, `Job #2`), phase indicator, files completed/total, bytes completed/total, transfer speed, and ETA.
   - Shows up to 8 concurrently active downloads with individual progress bars.
-  - Action buttons: "Sync now", "Pause", "Resume", and "Cancel".
-  - Dedicated tabs for Activity logs, Failed items, Restored files, and Run history.
+  - Action buttons: "Sync now", "Pause", "Resume", "Cancel", and "↻ Restart Sync" when cancelled.
+  - Dedicated tabs for Activity logs, Failed items, Restored files, and Run history (with Job IDs and cancelled run status).
+
+### US-4: Select OneDrive Source Folder
+- **As a** user,
+- **I want to** mirror either my entire OneDrive or choose a single specific directory (e.g., `/Documents`),
+- **So that** I only download what I need without synchronizing unwanted cloud folders.
+- **Acceptance Criteria:**
+  - Can browse and select root OneDrive folders or input a custom directory path.
+  - Switching source resets the delta link and accurately restricts the sync mirror to the chosen directory.
+
+### US-5: Clear Database & Reset Index
+- **As a** user,
+- **I want to** clear my local sync database (`state.db`),
+- **So that** I can start a fresh index scan from scratch without deleting existing files on disk.
+- **Acceptance Criteria:**
+  - Available in Settings menu (`⚙`).
+  - Confirms action with user, closes and recreates fresh `state.db`, and resets pending sync state.
 
 ---
 
@@ -100,15 +116,17 @@ OneSync provides a bulletproof, **one-way mirror** of OneDrive onto an external 
 - **CTA:** "Start syncing" button enabled only when all mandatory checks pass.
 
 ### Screen 3: Dashboard
-- **Header:** Account details, destination path, volume status indicator (green dot when connected, red when missing), last sync timestamp.
-- **Control Bar:** Primary sync actions ("Sync now", "Pause/Resume", "Cancel").
+- **Window Geometry:** Defaults to 1024 × 840 px with an enforced minimum height of 800 px (and 900 px width), ensuring activity console tables dynamically expand downwards to utilize the full available height.
+- **Header:** Account details, destination path, volume status indicator (green dot when connected, red when missing), last sync timestamp, and single directory source selector (`Entire OneDrive (/)` or specific directory).
+- **Control Bar:** Primary sync actions ("Sync now", "Pause/Resume", "Cancel", and "↻ Restart Sync" upon cancellation). Includes a "Cancelling..." transitional state while pipeline teardown completes.
 - **Metrics Bar:** Counters for Downloaded, Already up to date, Moved to restored, and Failed items.
-- **Active Streams:** Real-time transfer list (up to 8 files) with instantaneous speeds.
+- **Active Streams:** Real-time transfer list (up to 8 files) with instantaneous speeds and per-job ID indicator (`Job #<id>`).
 - **Tabbed Inspector:**
-  - **Activity:** Ring buffer of latest 200 system log messages.
+  - **Activity:** Ring buffer of latest 200 system log messages with downward-expanding console height.
   - **Failed:** Table of failed items with failure reason, retry count, and "Retry failed" button.
   - **Restored:** Chronological audit log of files moved to `restored/` with "Show in Finder" action.
-  - **History:** List of previous 20 sync runs with timestamp, duration, bytes synced, and status.
+  - **History:** List of previous sync runs with Job ID, timestamp, duration, bytes synced, and colored status badges (`COMPLETED`, `CANCELLED`, `FAILED`).
+
 
 ---
 

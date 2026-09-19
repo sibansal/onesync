@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import type {
-  SyncState,
-  SyncProgress,
-  SyncLogEntry,
-  DriveStatus
-} from '../../../shared/types';
+import type { SyncState, SyncProgress, SyncLogEntry, DriveStatus } from '../../../shared/types';
 
 export function useSyncState(): {
   syncState: SyncState;
@@ -16,13 +11,16 @@ export function useSyncState(): {
     phase: 'idle',
     isRunning: false,
     isPaused: false,
+    isCancelled: false,
     isWaitingMassMove: false,
     pendingMovesCount: 0,
-    error: null
+    error: null,
+    jobId: null,
   });
 
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
     phase: 'idle',
+    jobId: null,
     filesDone: 0,
     totalFiles: 0,
     bytesDone: 0,
@@ -33,16 +31,20 @@ export function useSyncState(): {
     downloadedCount: 0,
     upToDateCount: 0,
     restoredCount: 0,
-    failedCount: 0
+    failedCount: 0,
   });
 
   const [logs, setLogs] = useState<SyncLogEntry[]>([]);
   const [driveStatus, setDriveStatus] = useState<DriveStatus>({
     connected: true,
-    path: null
+    path: null,
   });
 
   useEffect(() => {
+    window.onesync.getSyncState?.().then((st) => {
+      if (st) setSyncState(st);
+    });
+
     const unsubState = window.onesync.onSyncState((state) => {
       setSyncState(state);
     });
@@ -53,8 +55,8 @@ export function useSyncState(): {
 
     const unsubLog = window.onesync.onSyncLog((entry) => {
       setLogs((prev) => {
-        const next = [entry, ...prev];
-        return next.length > 200 ? next.slice(0, 200) : next;
+        const next = [...prev, entry];
+        return next.length > 500 ? next.slice(next.length - 500) : next;
       });
     });
 
@@ -74,6 +76,6 @@ export function useSyncState(): {
     syncState,
     syncProgress,
     logs,
-    driveStatus
+    driveStatus,
   };
 }

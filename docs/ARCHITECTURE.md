@@ -111,26 +111,33 @@ classDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Preflight : Start Sync
+    Idle --> Preflight : Start Sync / Restart Sync
     Preflight --> Scanning : Volume & DB Verified
     Preflight --> Error : Mount/Account Failed
 
     Scanning --> Planning : Delta Fetched
+    Scanning --> Cancelled : User Cancel
     Scanning --> Error : Network/Auth Failure
 
     Planning --> Downloading : Actions Computed
     Planning --> WaitingMassMove : Moves > 30%
+    Planning --> Cancelled : User Cancel
     WaitingMassMove --> Downloading : User Confirmed
     WaitingMassMove --> Cancelled : User Aborted
 
     Downloading --> Sweeping : All Downloads Completed
     Downloading --> Paused : User Pause / Drive Unplugged
+    Downloading --> Cancelled : User Cancel
     Paused --> Downloading : Resume / Reconnect
+    Paused --> Cancelled : User Cancel
     Downloading --> Error : Disk Full (ENOSPC)
 
     Sweeping --> Finishing : Unmapped Files Moved to restored/
+    Sweeping --> Cancelled : User Cancel
     Finishing --> Done : Sync Run Logged
     Done --> Idle
+    Cancelled --> Preflight : Click "Restart Sync"
+    Cancelled --> Idle
     Error --> Idle : Acknowledge / Retry
 ```
 

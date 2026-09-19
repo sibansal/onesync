@@ -39,7 +39,7 @@ describe('safeMove & moveToRestored', () => {
     const restoredRel = moveToRestored({
       baseFolder: testDir,
       sourceFullPath: srcFile,
-      relativePath: 'docs/old.pdf'
+      relativePath: 'docs/old.pdf',
     });
 
     expect(restoredRel.startsWith('docs/old')).toBe(true);
@@ -61,7 +61,7 @@ describe('safeMove & moveToRestored', () => {
     const restoredRel = moveToRestored({
       baseFolder: testDir,
       sourceFullPath: srcFile,
-      relativePath: 'file.txt'
+      relativePath: 'file.txt',
     });
 
     expect(restoredRel).toContain('(restored ');

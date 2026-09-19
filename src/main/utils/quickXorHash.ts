@@ -72,7 +72,7 @@ export class QuickXorHasher {
 
 export function quickXorHash(
   data: Uint8Array | Buffer | string,
-  encoding: 'base64' | 'hex' = 'base64'
+  encoding: 'base64' | 'hex' = 'base64',
 ): string {
   const buf = typeof data === 'string' ? Buffer.from(data, 'utf-8') : data;
   return new QuickXorHasher().update(buf).digest(encoding);

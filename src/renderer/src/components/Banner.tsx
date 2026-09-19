@@ -13,18 +13,18 @@ export function Banner({
   title,
   message,
   actionText,
-  onAction
+  onAction,
 }: BannerProps): React.JSX.Element {
   const bgColors = {
     warning: 'rgba(210, 153, 34, 0.15)',
     error: 'rgba(218, 54, 51, 0.15)',
-    info: 'rgba(47, 129, 247, 0.15)'
+    info: 'rgba(47, 129, 247, 0.15)',
   };
 
   const borderColors = {
     warning: 'var(--accent-amber)',
     error: 'var(--accent-red)',
-    info: 'var(--accent-blue)'
+    info: 'var(--accent-blue)',
   };
 
   return (
@@ -38,7 +38,7 @@ export function Banner({
         alignItems: 'center',
         justifyContent: 'space-between',
         margin: '0.75rem 0',
-        fontSize: '0.875rem'
+        fontSize: '0.875rem',
       }}
     >
       <div>
@@ -54,7 +54,7 @@ export function Banner({
             background: borderColors[type],
             color: '#fff',
             fontSize: '0.8rem',
-            fontWeight: 500
+            fontWeight: 500,
           }}
         >
           {actionText}

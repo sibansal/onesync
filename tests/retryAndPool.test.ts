@@ -85,7 +85,7 @@ describe('TaskQueue & mapConcurrent', () => {
         running--;
         return item * 10;
       },
-      { concurrency: 2 }
+      { concurrency: 2 },
     );
 
     expect(results).toEqual([10, 20, 30, 40]);

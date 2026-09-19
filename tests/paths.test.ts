@@ -5,7 +5,7 @@ describe('paths.ts', () => {
   describe('sanitizeSegment', () => {
     it('replaces forbidden filesystem characters with underscore', () => {
       expect(sanitizeSegment('file:name*with?illegal"chars<here>and|pipe\\slash/test.txt')).toBe(
-        'file_name_with_illegal_chars_here_and_pipe_slash_test.txt'
+        'file_name_with_illegal_chars_here_and_pipe_slash_test.txt',
       );
     });
 
@@ -38,11 +38,13 @@ describe('paths.ts', () => {
 
   describe('resolveItemPaths & collision handling', () => {
     it('resolves parent hierarchy to relative path', () => {
-      const itemMap = new Map([
-        { id: 'root', name: '', parentId: null, isFolder: true },
-        { id: 'folder1', name: 'Documents', parentId: 'root', isFolder: true },
-        { id: 'file1', name: 'report.pdf', parentId: 'folder1', isFolder: false }
-      ].map((item) => [item.id, item]));
+      const itemMap = new Map(
+        [
+          { id: 'root', name: '', parentId: null, isFolder: true },
+          { id: 'folder1', name: 'Documents', parentId: 'root', isFolder: true },
+          { id: 'file1', name: 'report.pdf', parentId: 'folder1', isFolder: false },
+        ].map((item) => [item.id, item]),
+      );
 
       const items = [{ id: 'file1', name: 'report.pdf', parentId: 'folder1' }];
       const paths = resolveItemPaths(items, itemMap);
@@ -51,15 +53,17 @@ describe('paths.ts', () => {
     });
 
     it('appends deterministic suffix when two items map to the same path', () => {
-      const itemMap = new Map([
-        { id: 'root', name: '', parentId: null, isFolder: true },
-        { id: 'file1', name: 'My:File.txt', parentId: 'root', isFolder: false },
-        { id: 'file2', name: 'My*File.txt', parentId: 'root', isFolder: false }
-      ].map((item) => [item.id, item]));
+      const itemMap = new Map(
+        [
+          { id: 'root', name: '', parentId: null, isFolder: true },
+          { id: 'file1', name: 'My:File.txt', parentId: 'root', isFolder: false },
+          { id: 'file2', name: 'My*File.txt', parentId: 'root', isFolder: false },
+        ].map((item) => [item.id, item]),
+      );
 
       const items = [
         { id: 'file1', name: 'My:File.txt', parentId: 'root' },
-        { id: 'file2', name: 'My*File.txt', parentId: 'root' }
+        { id: 'file2', name: 'My*File.txt', parentId: 'root' },
       ];
 
       const paths = resolveItemPaths(items, itemMap);

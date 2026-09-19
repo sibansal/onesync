@@ -23,7 +23,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
     sweeping: 'Cleaning Up / Restoring',
     finishing: 'Finalizing Run',
     paused: 'Paused',
-    error: 'Error'
+    error: 'Error',
   };
 
   return (
@@ -33,7 +33,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
         border: '1px solid var(--border-subtle)',
         borderRadius: 'var(--radius-md)',
         padding: '1.25rem',
-        marginBottom: '1rem'
+        marginBottom: '1rem',
       }}
     >
       <div
@@ -41,10 +41,26 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '0.75rem'
+          marginBottom: '0.75rem',
         }}
       >
         <div>
+          {progress.jobId && (
+            <span
+              style={{
+                padding: '0.2rem 0.55rem',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                background: 'rgba(56, 139, 253, 0.15)',
+                color: 'var(--accent-blue)',
+                border: '1px solid rgba(56, 139, 253, 0.3)',
+                marginRight: '0.6rem',
+              }}
+            >
+              {progress.jobId}
+            </span>
+          )}
           <span
             style={{
               padding: '0.2rem 0.6rem',
@@ -54,7 +70,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
               textTransform: 'uppercase',
               background: isRunning ? 'var(--accent-blue)' : 'var(--bg-surface-elevated)',
               color: '#fff',
-              marginRight: '0.75rem'
+              marginRight: '0.75rem',
             }}
           >
             {phaseNames[progress.phase] || progress.phase}
@@ -70,7 +86,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
               style={{
                 marginLeft: '0.75rem',
                 fontSize: '0.85rem',
-                color: 'var(--text-secondary)'
+                color: 'var(--text-secondary)',
               }}
             >
               {formatSpeed(progress.speedBytesPerSec)}
@@ -85,7 +101,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
           background: 'var(--bg-surface-elevated)',
           borderRadius: '4px',
           overflow: 'hidden',
-          marginBottom: '0.75rem'
+          marginBottom: '0.75rem',
         }}
       >
         <div
@@ -94,7 +110,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
             width: `${percent}%`,
             background: 'linear-gradient(90deg, var(--accent-blue), #58a6ff)',
             borderRadius: '4px',
-            transition: 'width 0.2s ease'
+            transition: 'width 0.2s ease',
           }}
         />
       </div>
@@ -104,7 +120,7 @@ export function ProgressBar({ progress, isRunning }: ProgressBarProps): React.JS
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: '0.8rem',
-          color: 'var(--text-muted)'
+          color: 'var(--text-muted)',
         }}
       >
         <span>

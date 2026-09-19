@@ -47,6 +47,7 @@ export interface SyncProgress {
   bytesDone: number;
   totalBytes: number;
   speedBytesPerSec: number;
+  jobId: string | null;
   etaSeconds: number | null;
   activeDownloads: ActiveDownload[];
   downloadedCount: number;
@@ -59,9 +60,17 @@ export interface SyncState {
   phase: SyncPhase;
   isRunning: boolean;
   isPaused: boolean;
+  isCancelled?: boolean;
   isWaitingMassMove: boolean;
   pendingMovesCount: number;
   error: string | null;
+  jobId: string | null;
+}
+
+export interface RemoteFolder {
+  id: string;
+  name: string;
+  path: string;
 }
 
 export interface SyncLogEntry {
@@ -122,7 +131,11 @@ export interface RemoteItem {
 
 export interface OneSyncAPI {
   // Auth
-  getStatus: () => Promise<{ signedIn: boolean; account: AccountInfo | null; quota: DriveQuota | null }>;
+  getStatus: () => Promise<{
+    signedIn: boolean;
+    account: AccountInfo | null;
+    quota: DriveQuota | null;
+  }>;
   signIn: () => Promise<{ success: boolean; account?: AccountInfo; error?: string }>;
   signOut: () => Promise<{ success: boolean }>;
 
@@ -137,6 +150,7 @@ export interface OneSyncAPI {
   pauseSync: () => Promise<void>;
   resumeSync: () => Promise<void>;
   cancelSync: () => Promise<void>;
+  getSyncState: () => Promise<SyncState>;
   confirmMassMove: (allow: boolean) => Promise<void>;
   retryFailed: () => Promise<void>;
   verifyIntegrity: () => Promise<void>;
@@ -145,6 +159,12 @@ export interface OneSyncAPI {
   getFailed: () => Promise<FailedItem[]>;
   getRestored: () => Promise<RestoredItem[]>;
   getHistory: () => Promise<SyncRunHistory[]>;
+  clearDatabase: () => Promise<{ success: boolean; error?: string }>;
+
+  // Source folder
+  getSourceFolder: () => Promise<string | null>;
+  setSourceFolder: (folderPath: string | null) => Promise<void>;
+  listSourceFolders: () => Promise<RemoteFolder[]>;
 
   // System
   revealInFinder: (relPath: string, folderType?: 'onedrive' | 'restored') => Promise<void>;

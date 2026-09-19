@@ -83,7 +83,9 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
-  transition: background-color 0.15s ease, transform 0.05s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.05s ease;
   -webkit-app-region: no-drag;
 }
 
@@ -120,6 +122,6 @@ input,
 select,
 textarea,
 a,
-[role="button"] {
+[role='button'] {
   -webkit-app-region: no-drag;
 }

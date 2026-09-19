@@ -102,10 +102,14 @@ CREATE TABLE sync_runs (
 ### Endpoints
 - `GET /me`: Account profile (id, displayName, userPrincipalName).
 - `GET /me/drive`: Root drive quota (`quota.used`, `quota.total`).
-- `GET /me/drive/root/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`: Delta changes tracking.
+- `GET /me/drive/root/children`: Enumeration of root folders for source directory picker.
+- `GET /me/drive/root/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`: Delta changes tracking across entire drive.
+- `GET /me/drive/root:/{folder}:/delta?$select=...`: Scoped delta query when a specific source folder is selected.
 - `GET /me/drive/items/{id}?$select=id,@microsoft.graph.downloadUrl`: Pre-download direct link retrieval.
 
 ### Gotchas & Defenses
+- **Source Folder Scoping:** When a single directory is selected (e.g. `/Documents`), Graph API is queried via `GET /me/drive/root:/Documents:/delta`. Changing source folder resets `delta_link` to initiate a full re-scan of the new folder.
+- **Job ID Tracking:** Every sync job is assigned an incremental `Job #<id>` tied directly to `sync_runs.id`. This Job ID is included in `SyncState` and `SyncProgress` and surfaced across all logs and UI views.
 - **Paging:** Delta tokens are saved only after traversing all `@odata.nextLink` until `@odata.deltaLink`.
 - **Missing Paths:** `parentReference.path` is omitted in delta tokens; relative paths are reconstructed via in-memory parent-id walking.
 - **Hierarchy Out-of-Order:** Children may be listed before parents; rows are upserted first, and path derivation occurs during planning.
@@ -208,3 +212,9 @@ Definitions:
 8. **Test Execution Environment:** To guarantee 100% binary ABI compatibility with native modules compiled for Electron (`better-sqlite3`), Vitest runs inside Electron's Node runtime via `ELECTRON_RUN_AS_NODE=1 electron ./node_modules/vitest/vitest.mjs run`.
 9. **Custom App Icon Resolution:** Supports custom icon via `MAIN_VITE_CUSTOM_ICON_PATH`, `build/icon.png`, or `build/icon.icns`. Sets macOS dock icon dynamically on startup.
 10. **Frameless Window Draggability:** To ensure seamless macOS window movement with `titleBarStyle: 'hiddenInset'`, a dedicated `.app-titlebar` is positioned at the top of `App.tsx` with `-webkit-app-region: drag` and 78px padding for traffic lights, while interactive controls use `.no-drag`.
+11. **IPC Idempotency & Safe Registration:** Electron throws uncaught exceptions if `ipcMain.handle()` is invoked for an already registered channel (e.g. upon window recreation or reactivation). All IPC handlers are registered idempotently using `safeHandle()` with module-level service singletons and dynamic `activeMainWindow` rebinding.
+12. **Explicit Cancel & Restart:** Cancelling a sync marks the run status explicitly as `'cancelled'`, cleanly halts stream pipelines and abort controllers without retry penalties, and enables a dedicated '↻ Restart Sync' action on the dashboard.
+13. **Local Database Clearing:** Added explicit database clearing to re-index files from scratch without touching any synced data on disk or in the cloud.
+14. **Window Geometry & Dynamic Console Height:** The main window opens at `1024 x 840 px` with an enforced minimum height of `800 px` (`width: 900, minHeight: 800`) to guarantee ample viewports for activity logs and tables. The lower Activity Console section utilizes dynamic flex layout (`flex: 1 1 auto`) to expand downwards and claim all available vertical window space.
+15. **Async Cancellation Teardown & State Querying:** Sync engine exposes `cancelSyncAndWait(): Promise<void>` so the cancellation IPC handler awaits complete pipeline termination before replying. The engine's `finally` block guarantees an authoritative dispatch of `onStateChange({ isRunning: false, isCancelled: true })`. On window mount or refresh, the UI queries live state via `window.onesync.getSyncState()`, preventing desynchronization and ensuring the restart button is always surfaced cleanly.
+

@@ -41,7 +41,9 @@ function formatRestoredTimestamp(date: Date = new Date()): string {
 export function getRestoredDestinationPath(baseFolder: string, relativePath: string): string {
   const targetDir = join(baseFolder, 'restored', dirname(relativePath));
   const ext = extname(relativePath);
-  const baseName = relativePath.slice(dirname(relativePath) === '.' ? 0 : dirname(relativePath).length + 1);
+  const baseName = relativePath.slice(
+    dirname(relativePath) === '.' ? 0 : dirname(relativePath).length + 1,
+  );
   const nameWithoutExt = baseName.slice(0, baseName.length - ext.length);
 
   const initialPath = join(baseFolder, 'restored', relativePath);

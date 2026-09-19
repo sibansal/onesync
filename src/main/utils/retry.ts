@@ -40,7 +40,7 @@ export interface RetryOptions {
 
 export async function withRetry<T>(
   fn: (attempt: number) => Promise<T>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<T> {
   const maxRetries = options.maxRetries ?? 5;
   const baseDelayMs = options.baseDelayMs ?? 1000;
@@ -55,6 +55,14 @@ export async function withRetry<T>(
     try {
       return await fn(attempt);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
+
+      if (SyncError.isSyncError(err) && (err.code === 'CANCELLED' || !err.retriable)) {
+        throw err;
+      }
+
       attempt++;
 
       if (attempt > maxRetries) {

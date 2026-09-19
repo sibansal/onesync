@@ -37,7 +37,7 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
         justifyContent: 'center',
         padding: '2rem',
         textAlign: 'center',
-        background: 'radial-gradient(ellipse at top, #161b22 0%, var(--bg-app) 70%)'
+        background: 'radial-gradient(ellipse at top, #161b22 0%, var(--bg-app) 70%)',
       }}
     >
       <div
@@ -52,7 +52,7 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
           fontSize: '2rem',
           color: '#fff',
           boxShadow: '0 8px 24px rgba(47, 129, 247, 0.3)',
-          marginBottom: '1.5rem'
+          marginBottom: '1.5rem',
         }}
       >
         ☁️
@@ -68,7 +68,7 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
           maxWidth: '440px',
           lineHeight: '1.6',
           marginBottom: '2rem',
-          fontSize: '0.95rem'
+          fontSize: '0.95rem',
         }}
       >
         OneSync keeps an atomic, one-way mirror of your cloud files on an external drive. It never
@@ -88,7 +88,9 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
       )}
 
       {isWaiting ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
+        >
           <div
             style={{
               padding: '0.8rem 1.5rem',
@@ -96,7 +98,7 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
               background: 'var(--bg-surface-elevated)',
               border: '1px solid var(--border-subtle)',
               fontSize: '0.9rem',
-              color: 'var(--text-primary)'
+              color: 'var(--text-primary)',
             }}
           >
             Waiting for browser sign-in…
@@ -107,7 +109,7 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
               background: 'transparent',
               color: 'var(--text-secondary)',
               fontSize: '0.85rem',
-              textDecoration: 'underline'
+              textDecoration: 'underline',
             }}
           >
             Cancel
@@ -123,7 +125,7 @@ export function ConnectScreen({ onConnected }: ConnectScreenProps): React.JSX.El
             borderRadius: 'var(--radius-md)',
             fontSize: '1rem',
             fontWeight: 600,
-            boxShadow: '0 4px 14px rgba(47, 129, 247, 0.4)'
+            boxShadow: '0 4px 14px rgba(47, 129, 247, 0.4)',
           }}
         >
           Connect to OneDrive

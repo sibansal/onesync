@@ -6,7 +6,7 @@ export interface PoolOptions {
 export async function mapConcurrent<T, R>(
   items: Iterable<T>,
   fn: (item: T, index: number) => Promise<R>,
-  options: PoolOptions
+  options: PoolOptions,
 ): Promise<R[]> {
   const { concurrency, signal } = options;
   const results: R[] = [];

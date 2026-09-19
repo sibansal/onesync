@@ -39,7 +39,7 @@ describe('Downloader with MockDrive', () => {
       size: 11,
       fingerprint: 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e',
       hashType: 'sha256' as const,
-      remoteModified: '2026-09-19T12:00:00Z'
+      remoteModified: '2026-09-19T12:00:00Z',
     };
 
     itemsRepo.upsertBatch([item]);
@@ -47,7 +47,7 @@ describe('Downloader with MockDrive', () => {
     const result = await downloadFile(item, 'test.txt', {
       baseFolder: testDir,
       remoteDrive: mockDrive,
-      itemsRepo
+      itemsRepo,
     });
 
     expect(result.localSize).toBe(11);
@@ -68,9 +68,11 @@ describe('Downloader with MockDrive', () => {
       name: 'data.bin',
       isFolder: false,
       size: fullContent.length,
-      fingerprint: (mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }).items.get('f2')!.item.fingerprint,
+      fingerprint: (
+        mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }
+      ).items.get('f2')!.item.fingerprint,
       hashType: 'sha256' as const,
-      remoteModified: '2026-09-19T12:00:00Z'
+      remoteModified: '2026-09-19T12:00:00Z',
     };
 
     itemsRepo.upsertBatch([item]);
@@ -88,7 +90,7 @@ describe('Downloader with MockDrive', () => {
     const result = await downloadFile(item, 'data.bin', {
       baseFolder: testDir,
       remoteDrive: mockDrive,
-      itemsRepo
+      itemsRepo,
     });
 
     expect(result.localSize).toBe(fullContent.length);
@@ -106,9 +108,11 @@ describe('Downloader with MockDrive', () => {
       name: 'replace.txt',
       isFolder: false,
       size: fullContent.length,
-      fingerprint: (mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }).items.get('f3')!.item.fingerprint,
+      fingerprint: (
+        mockDrive as unknown as { items: Map<string, { item: { fingerprint: string } }> }
+      ).items.get('f3')!.item.fingerprint,
       hashType: 'sha256' as const,
-      remoteModified: '2026-09-19T12:00:00Z'
+      remoteModified: '2026-09-19T12:00:00Z',
     };
 
     itemsRepo.upsertBatch([item]);
@@ -116,7 +120,7 @@ describe('Downloader with MockDrive', () => {
     const result = await downloadFile(item, 'replace.txt', {
       baseFolder: testDir,
       remoteDrive: mockDrive,
-      itemsRepo
+      itemsRepo,
     });
 
     expect(result.localSize).toBe(fullContent.length);
@@ -133,7 +137,7 @@ describe('Downloader with MockDrive', () => {
       size: 11,
       fingerprint: 'bad_hash_that_does_not_match',
       hashType: 'sha256' as const,
-      remoteModified: '2026-09-19T12:00:00Z'
+      remoteModified: '2026-09-19T12:00:00Z',
     };
 
     itemsRepo.upsertBatch([item]);
@@ -142,8 +146,8 @@ describe('Downloader with MockDrive', () => {
       downloadFile(item, 'corrupt.txt', {
         baseFolder: testDir,
         remoteDrive: mockDrive,
-        itemsRepo
-      })
+        itemsRepo,
+      }),
     ).rejects.toThrow('Hash verification failed');
 
     // Verify .part was deleted

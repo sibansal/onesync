@@ -8,7 +8,7 @@ import {
   mkdirSync,
   openSync,
   closeSync,
-  utimesSync
+  utimesSync,
 } from 'fs';
 import { dirname, join } from 'path';
 import { pipeline } from 'stream/promises';
@@ -45,7 +45,7 @@ export interface DownloaderOptions {
 export async function downloadFile(
   item: RemoteItem,
   desiredRelativePath: string,
-  options: DownloaderOptions
+  options: DownloaderOptions,
 ): Promise<{ finalPath: string; localSize: number; localMtimeMs: number }> {
   const { baseFolder, remoteDrive, itemsRepo, onProgress, signal } = options;
   const onedriveRoot = join(baseFolder, 'onedrive');
@@ -74,7 +74,7 @@ export async function downloadFile(
       localSize: 0,
       localMtimeMs: Math.round(s.mtimeMs),
       syncedFingerprint: item.fingerprint,
-      syncedAt: Date.now()
+      syncedAt: Date.now(),
     });
 
     onProgress?.({ itemId: item.id, bytesDone: 0, totalBytes: 0 });
@@ -87,7 +87,7 @@ export async function downloadFile(
     throw new SyncError({
       code: 'DISK_FULL',
       message: `Insufficient free disk space to download ${item.name} (${item.size} bytes needed, reserve: 100MB)`,
-      retriable: false
+      retriable: false,
     });
   }
 
@@ -115,7 +115,7 @@ export async function downloadFile(
   const { stream: remoteStream, resumed } = await remoteDrive.openDownload(
     item,
     existingBytes,
-    signal
+    signal,
   );
 
   // Setup hashers matching remote hashType
@@ -145,7 +145,7 @@ export async function downloadFile(
 
   // 5. Pipe incoming remote bytes to .part file while hashing inline
   const writeStream = createWriteStream(partPath, {
-    flags: existingBytes > 0 && resumed ? 'a' : 'w'
+    flags: existingBytes > 0 && resumed ? 'a' : 'w',
   });
 
   let bytesDownloaded = existingBytes;
@@ -162,26 +162,36 @@ export async function downloadFile(
         onProgress?.({
           itemId: item.id,
           bytesDone: bytesDownloaded,
-          totalBytes: item.size
+          totalBytes: item.size,
         });
       }
 
       writeStream.write(chunk, callback);
-    }
+    },
   });
 
   try {
-    await pipeline(remoteStream, hashingTransform);
+    await pipeline(remoteStream, hashingTransform, { signal });
     writeStream.end();
   } catch (streamErr: unknown) {
     writeStream.destroy();
+
+    if (signal?.aborted || (streamErr instanceof Error && streamErr.name === 'AbortError')) {
+      throw new SyncError({
+        code: 'CANCELLED',
+        message: 'Download cancelled by user',
+        retriable: false,
+        cause: streamErr,
+      });
+    }
+
     const code = (streamErr as NodeJS.ErrnoException).code;
     if (code === 'ENOSPC') {
       throw new SyncError({
         code: 'DISK_FULL',
         message: `Disk full while downloading ${item.name}`,
         retriable: false,
-        cause: streamErr
+        cause: streamErr,
       });
     }
     if (code === 'ENOENT' || code === 'EIO' || code === 'ENXIO') {
@@ -189,7 +199,7 @@ export async function downloadFile(
         code: 'DRIVE_DISCONNECTED',
         message: 'External drive detached during download',
         retriable: false,
-        cause: streamErr
+        cause: streamErr,
       });
     }
     throw streamErr;
@@ -209,7 +219,7 @@ export async function downloadFile(
     throw new SyncError({
       code: 'SIZE_MISMATCH',
       message: `Downloaded size (${finalPartStat.size}) does not match expected size (${item.size})`,
-      retriable: true
+      retriable: true,
     });
   }
 
@@ -223,8 +233,14 @@ export async function downloadFile(
     computedHash = quickXor.digest('base64');
   }
 
-  if (item.fingerprint && computedHash && computedHash.toLowerCase() !== item.fingerprint.toLowerCase()) {
-    logger.warn(`Hash mismatch for ${item.name}. Expected: ${item.fingerprint}, Got: ${computedHash}`);
+  if (
+    item.fingerprint &&
+    computedHash &&
+    computedHash.toLowerCase() !== item.fingerprint.toLowerCase()
+  ) {
+    logger.warn(
+      `Hash mismatch for ${item.name}. Expected: ${item.fingerprint}, Got: ${computedHash}`,
+    );
     try {
       unlinkSync(partPath);
     } catch {
@@ -233,7 +249,7 @@ export async function downloadFile(
     throw new SyncError({
       code: 'HASH_MISMATCH',
       message: `Hash verification failed for ${item.name}`,
-      retriable: true
+      retriable: true,
     });
   }
 
@@ -256,12 +272,12 @@ export async function downloadFile(
     localSize: destStat.size,
     localMtimeMs: Math.round(destStat.mtimeMs),
     syncedFingerprint: item.fingerprint ?? computedHash,
-    syncedAt: Date.now()
+    syncedAt: Date.now(),
   });
 
   return {
     finalPath: finalFullPath,
     localSize: destStat.size,
-    localMtimeMs: Math.round(destStat.mtimeMs)
+    localMtimeMs: Math.round(destStat.mtimeMs),
   };
 }

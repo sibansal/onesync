@@ -62,7 +62,7 @@ export default function App(): React.JSX.Element {
           justifyContent: 'center',
           background: 'var(--bg-app)',
           color: 'var(--text-secondary)',
-          fontSize: '0.9rem'
+          fontSize: '0.9rem',
         }}
       >
         Initializing OneSync…
@@ -109,7 +109,7 @@ export default function App(): React.JSX.Element {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
           title="About OneSync"
         >

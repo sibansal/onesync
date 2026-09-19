@@ -6,11 +6,13 @@ import { logger } from './logger';
 export interface AppSettings {
   destinationPath: string | null;
   accountId: string | null;
+  sourceFolder: string | null;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   destinationPath: null,
-  accountId: null
+  accountId: null,
+  sourceFolder: null,
 };
 
 class SettingsStore {
@@ -39,8 +41,10 @@ class SettingsStore {
         const raw = readFileSync(this.filePath, 'utf-8');
         const parsed = JSON.parse(raw);
         return {
-          destinationPath: typeof parsed.destinationPath === 'string' ? parsed.destinationPath : null,
-          accountId: typeof parsed.accountId === 'string' ? parsed.accountId : null
+          destinationPath:
+            typeof parsed.destinationPath === 'string' ? parsed.destinationPath : null,
+          accountId: typeof parsed.accountId === 'string' ? parsed.accountId : null,
+          sourceFolder: typeof parsed.sourceFolder === 'string' ? parsed.sourceFolder : null,
         };
       }
     } catch (err) {
@@ -69,6 +73,15 @@ class SettingsStore {
   public setAccountId(accountId: string | null): void {
     this.settings.accountId = accountId;
     this.save();
+  }
+
+  public setSourceFolder(sourceFolder: string | null): void {
+    this.settings.sourceFolder = sourceFolder;
+    this.save();
+  }
+
+  public getSourceFolder(): string | null {
+    return this.settings.sourceFolder;
   }
 
   public clear(): void {

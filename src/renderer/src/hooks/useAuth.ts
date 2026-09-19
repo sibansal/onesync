@@ -78,6 +78,6 @@ export function useAuth(): {
     error,
     signIn,
     signOut,
-    refreshStatus
+    refreshStatus,
   };
 }

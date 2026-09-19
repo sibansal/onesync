@@ -66,7 +66,7 @@ export class ItemsRepo {
             fingerprint: item.fingerprint,
             hashType: item.hashType,
             remoteModified: item.remoteModified,
-            seenRun
+            seenRun,
           });
         }
       }
@@ -95,7 +95,9 @@ export class ItemsRepo {
   }
 
   public getCount(): number {
-    const row = this.db.prepare('SELECT COUNT(*) as count FROM items WHERE is_folder = 0').get() as {
+    const row = this.db
+      .prepare('SELECT COUNT(*) as count FROM items WHERE is_folder = 0')
+      .get() as {
       count: number;
     };
     return row.count;
@@ -109,10 +111,11 @@ export class ItemsRepo {
       localMtimeMs: number;
       syncedFingerprint: string | null;
       syncedAt: number;
-    }
+    },
   ): void {
     this.db
-      .prepare(`
+      .prepare(
+        `
         UPDATE items SET
           local_path = @localPath,
           local_size = @localSize,
@@ -125,14 +128,15 @@ export class ItemsRepo {
           retry_count = 0,
           next_retry_at = NULL
         WHERE id = @id
-      `)
+      `,
+      )
       .run({
         id,
         localPath: update.localPath,
         localSize: update.localSize,
         localMtimeMs: update.localMtimeMs,
         syncedFingerprint: update.syncedFingerprint,
-        syncedAt: update.syncedAt
+        syncedAt: update.syncedAt,
       });
   }
 
@@ -146,10 +150,11 @@ export class ItemsRepo {
       errorCode: string;
       errorMessage: string;
       nextRetryAt: number;
-    }
+    },
   ): void {
     this.db
-      .prepare(`
+      .prepare(
+        `
         UPDATE items SET
           status = 'failed',
           error_code = @errorCode,
@@ -157,12 +162,13 @@ export class ItemsRepo {
           retry_count = retry_count + 1,
           next_retry_at = @nextRetryAt
         WHERE id = @id
-      `)
+      `,
+      )
       .run({
         id,
         errorCode: options.errorCode,
         errorMessage: options.errorMessage,
-        nextRetryAt: options.nextRetryAt
+        nextRetryAt: options.nextRetryAt,
       });
   }
 
@@ -171,31 +177,35 @@ export class ItemsRepo {
     options: {
       errorCode: string;
       errorMessage: string;
-    }
+    },
   ): void {
     this.db
-      .prepare(`
+      .prepare(
+        `
         UPDATE items SET
           status = 'failed_permanent',
           error_code = @errorCode,
           error_message = @errorMessage
         WHERE id = @id
-      `)
+      `,
+      )
       .run({
         id,
         errorCode: options.errorCode,
-        errorMessage: options.errorMessage
+        errorMessage: options.errorMessage,
       });
   }
 
   public resetFailedRetries(): void {
     this.db
-      .prepare(`
+      .prepare(
+        `
         UPDATE items SET
           status = 'pending',
           next_retry_at = NULL
         WHERE status = 'failed'
-      `)
+      `,
+      )
       .run();
   }
 
@@ -211,7 +221,7 @@ export class ItemsRepo {
       errorCode: r.error_code,
       errorMessage: r.error_message,
       retryCount: r.retry_count,
-      nextRetryAt: r.next_retry_at
+      nextRetryAt: r.next_retry_at,
     }));
   }
 

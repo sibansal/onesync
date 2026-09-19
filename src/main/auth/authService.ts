@@ -4,7 +4,7 @@ import {
   PublicClientApplication,
   type Configuration,
   type AccountInfo as MsalAccountInfo,
-  CryptoProvider
+  CryptoProvider,
 } from '@azure/msal-node';
 import { config } from '../config';
 import { logger } from '../logger';
@@ -33,11 +33,11 @@ export class AuthService {
     const msalConfig: Configuration = {
       auth: {
         clientId: config.msClientId,
-        authority: config.msAuthority
+        authority: config.msAuthority,
       },
       cache: {
-        cachePlugin: this.cachePlugin
-      }
+        cachePlugin: this.cachePlugin,
+      },
     };
 
     this.pca = new PublicClientApplication(msalConfig);
@@ -63,14 +63,14 @@ export class AuthService {
       throw new SyncError({
         code: 'AUTH_EXPIRED',
         message: 'No active account signed in',
-        retriable: false
+        retriable: false,
       });
     }
 
     try {
       const response = await this.pca.acquireTokenSilent({
         account: this.activeAccount,
-        scopes: GRAPH_SCOPES
+        scopes: GRAPH_SCOPES,
       });
 
       if (!response || !response.accessToken) {
@@ -84,7 +84,7 @@ export class AuthService {
         code: 'AUTH_EXPIRED',
         message: 'Authentication session expired, interactive sign-in needed',
         retriable: false,
-        cause: err
+        cause: err,
       });
     }
   }
@@ -124,7 +124,8 @@ export class AuthService {
         finishReject(new Error('Sign-in timed out. Please try again.'));
       }, 120000);
 
-      const isLoopback = config.msRedirectUri.startsWith('http://') || config.msRedirectUri.startsWith('https://');
+      const isLoopback =
+        config.msRedirectUri.startsWith('http://') || config.msRedirectUri.startsWith('https://');
 
       if (!isLoopback) {
         // Custom protocol scheme (e.g. onesync://auth, dev.sibansal.onesync://auth, msal<client_id>://auth)
@@ -145,14 +146,17 @@ export class AuthService {
                 code,
                 scopes: GRAPH_SCOPES,
                 redirectUri: config.msRedirectUri,
-                codeVerifier: verifier
+                codeVerifier: verifier,
               });
 
               this.activeAccount = tokenResponse.account;
               finishResolve({
-                id: tokenResponse.account?.homeAccountId || tokenResponse.account?.localAccountId || 'unknown',
+                id:
+                  tokenResponse.account?.homeAccountId ||
+                  tokenResponse.account?.localAccountId ||
+                  'unknown',
                 name: tokenResponse.account?.name || 'OneDrive User',
-                email: tokenResponse.account?.username || ''
+                email: tokenResponse.account?.username || '',
               });
             }
           } catch (err) {
@@ -160,13 +164,12 @@ export class AuthService {
           }
         };
 
-        this.pca!
-          .getAuthCodeUrl({
-            scopes: GRAPH_SCOPES,
-            redirectUri: config.msRedirectUri,
-            codeChallenge: challenge,
-            codeChallengeMethod: 'S256'
-          })
+        this.pca!.getAuthCodeUrl({
+          scopes: GRAPH_SCOPES,
+          redirectUri: config.msRedirectUri,
+          codeChallenge: challenge,
+          codeChallengeMethod: 'S256',
+        })
           .then((authUrl) => shell.openExternal(authUrl))
           .catch((err) => finishReject(err instanceof Error ? err : new Error(String(err))));
 
@@ -207,14 +210,17 @@ export class AuthService {
               code,
               scopes: GRAPH_SCOPES,
               redirectUri,
-              codeVerifier: verifier
+              codeVerifier: verifier,
             });
 
             this.activeAccount = tokenResponse.account;
             finishResolve({
-              id: tokenResponse.account?.homeAccountId || tokenResponse.account?.localAccountId || 'unknown',
+              id:
+                tokenResponse.account?.homeAccountId ||
+                tokenResponse.account?.localAccountId ||
+                'unknown',
               name: tokenResponse.account?.name || 'OneDrive User',
-              email: tokenResponse.account?.username || ''
+              email: tokenResponse.account?.username || '',
             });
           }
         } catch (err) {
@@ -240,7 +246,7 @@ export class AuthService {
               scopes: GRAPH_SCOPES,
               redirectUri,
               codeChallenge: challenge,
-              codeChallengeMethod: 'S256'
+              codeChallengeMethod: 'S256',
             });
 
             await shell.openExternal(authUrl);
@@ -306,7 +312,7 @@ export class AuthService {
     return {
       id: this.activeAccount.homeAccountId || this.activeAccount.localAccountId,
       name: this.activeAccount.name || 'OneDrive User',
-      email: this.activeAccount.username
+      email: this.activeAccount.username,
     };
   }
 }

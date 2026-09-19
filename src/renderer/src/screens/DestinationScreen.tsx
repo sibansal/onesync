@@ -13,7 +13,7 @@ export function DestinationScreen({
   account,
   quota,
   onDestinationConfirmed,
-  onSignOut
+  onSignOut,
 }: DestinationScreenProps): React.JSX.Element {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [validation, setValidation] = useState<DestinationValidation | null>(null);
@@ -42,7 +42,7 @@ export function DestinationScreen({
         alignItems: 'center',
         justifyContent: 'center',
         padding: '2rem',
-        overflowY: 'auto'
+        overflowY: 'auto',
       }}
     >
       <div
@@ -53,7 +53,7 @@ export function DestinationScreen({
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-lg)',
           padding: '2rem',
-          boxShadow: 'var(--shadow-md)'
+          boxShadow: 'var(--shadow-md)',
         }}
       >
         {/* Account Info Header */}
@@ -64,7 +64,7 @@ export function DestinationScreen({
             alignItems: 'center',
             paddingBottom: '1rem',
             borderBottom: '1px solid var(--border-subtle)',
-            marginBottom: '1.5rem'
+            marginBottom: '1.5rem',
           }}
         >
           <div>
@@ -86,7 +86,7 @@ export function DestinationScreen({
               border: '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-secondary)',
-              fontSize: '0.8rem'
+              fontSize: '0.8rem',
             }}
           >
             Sign Out
@@ -116,7 +116,7 @@ export function DestinationScreen({
               textAlign: 'left',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
             }}
           >
             <span
@@ -124,7 +124,7 @@ export function DestinationScreen({
                 fontFamily: selectedFolder ? 'var(--font-mono)' : 'inherit',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
               }}
             >
               {selectedFolder || '📁 Click to select folder on external volume…'}
@@ -152,7 +152,7 @@ export function DestinationScreen({
               fontSize: '0.85rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.5rem'
+              gap: '0.5rem',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -183,14 +183,16 @@ export function DestinationScreen({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>
-                {validation.existingAccount && validation.existingAccount !== account.id ? '✖' : '✔'}
+                {validation.existingAccount && validation.existingAccount !== account.id
+                  ? '✖'
+                  : '✔'}
               </span>
               <span
                 style={{
                   color:
                     validation.existingAccount && validation.existingAccount !== account.id
                       ? 'var(--accent-red)'
-                      : 'inherit'
+                      : 'inherit',
                 }}
               >
                 {validation.existingDb
@@ -206,7 +208,7 @@ export function DestinationScreen({
                   padding: '0.5rem',
                   background: 'rgba(218, 54, 51, 0.1)',
                   borderRadius: 'var(--radius-sm)',
-                  color: 'var(--accent-red)'
+                  color: 'var(--accent-red)',
                 }}
               >
                 {validation.errors.map((err: string, idx: number) => (
@@ -229,7 +231,7 @@ export function DestinationScreen({
             borderRadius: 'var(--radius-md)',
             fontSize: '1rem',
             fontWeight: 600,
-            cursor: validation?.isValid ? 'pointer' : 'not-allowed'
+            cursor: validation?.isValid ? 'pointer' : 'not-allowed',
           }}
         >
           Start Syncing

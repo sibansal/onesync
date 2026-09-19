@@ -18,7 +18,7 @@ export interface GraphFetchOptions extends RequestInit {
 export async function graphFetch(
   url: string,
   options: GraphFetchOptions = {},
-  authService?: AuthService
+  authService?: AuthService,
 ): Promise<Response> {
   let hasRefreshedToken = false;
 
@@ -38,14 +38,25 @@ export async function graphFetch(
       try {
         response = await fetch(url, {
           ...options,
-          headers
+          headers,
         });
       } catch (networkErr: unknown) {
+        if (
+          options.signal?.aborted ||
+          (networkErr instanceof Error && networkErr.name === 'AbortError')
+        ) {
+          throw new SyncError({
+            code: 'CANCELLED',
+            message: 'Request was cancelled',
+            retriable: false,
+            cause: networkErr,
+          });
+        }
         throw new SyncError({
           code: 'NETWORK',
           message: `Network request failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`,
           retriable: true,
-          cause: networkErr
+          cause: networkErr,
         });
       }
 
@@ -55,7 +66,7 @@ export async function graphFetch(
         throw new SyncError({
           code: 'AUTH_EXPIRED',
           message: 'Access token expired; refreshing token',
-          retriable: true
+          retriable: true,
         });
       }
 
@@ -71,7 +82,7 @@ export async function graphFetch(
           code: 'THROTTLED',
           message: `Graph API throttled (${response.status}), retry after ${validSeconds}s`,
           retriable: true,
-          retryAfterMs: validSeconds * 1000
+          retryAfterMs: validSeconds * 1000,
         });
       }
 
@@ -80,7 +91,7 @@ export async function graphFetch(
         throw new SyncError({
           code: 'SERVER_5XX',
           message: `Graph API server error: HTTP ${response.status}`,
-          retriable: true
+          retriable: true,
         });
       }
 
@@ -89,7 +100,7 @@ export async function graphFetch(
     {
       maxRetries: config.maxRetries,
       baseDelayMs: config.retryBaseDelayMs,
-      useJitter: true
-    }
+      useJitter: true,
+    },
   );
 }

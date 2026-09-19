@@ -1,9 +1,10 @@
+import React, { useRef, useEffect } from 'react';
 import type {
   ActiveDownload,
   FailedItem,
   RestoredItem,
   SyncRunHistory,
-  SyncLogEntry
+  SyncLogEntry,
 } from '../../../shared/types';
 import { formatBytes } from '../../../shared/format';
 
@@ -23,7 +24,7 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
         border: '1px solid var(--border-subtle)',
         borderRadius: 'var(--radius-md)',
         padding: '1rem',
-        marginBottom: '1rem'
+        marginBottom: '1rem',
       }}
     >
       <div
@@ -32,7 +33,7 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
           fontWeight: 600,
           color: 'var(--text-secondary)',
           textTransform: 'uppercase',
-          marginBottom: '0.5rem'
+          marginBottom: '0.5rem',
         }}
       >
         Active Downloads ({downloads.length})
@@ -43,14 +44,16 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
             dl.totalBytes > 0 ? Math.min(100, Math.round((dl.bytesDone / dl.totalBytes) * 100)) : 0;
           return (
             <div key={dl.id} style={{ fontSize: '0.85rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}
+              >
                 <span
                   style={{
                     fontFamily: 'var(--font-mono)',
                     maxWidth: '65%',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {dl.name}
@@ -64,7 +67,7 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
                   height: '4px',
                   background: 'var(--bg-surface-elevated)',
                   borderRadius: '2px',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
                 }}
               >
                 <div
@@ -72,7 +75,7 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
                     height: '100%',
                     width: `${pct}%`,
                     background: 'var(--accent-blue)',
-                    borderRadius: '2px'
+                    borderRadius: '2px',
                   }}
                 />
               </div>
@@ -85,9 +88,34 @@ export function ActiveDownloadsList({ downloads }: ActiveDownloadsProps): React.
 }
 
 export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Element {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+
+  const handleScroll = (): void => {
+    if (containerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 60;
+    }
+  };
+
+  useEffect(() => {
+    if (containerRef.current && isNearBottomRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [logs.length]);
+
   if (logs.length === 0) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem',
+          color: 'var(--text-muted)',
+        }}
+      >
         No recent activity logged.
       </div>
     );
@@ -95,17 +123,20 @@ export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Eleme
 
   return (
     <div
+      ref={containerRef}
+      onScroll={handleScroll}
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: '0.8rem',
-        maxHeight: '320px',
+        flex: 1,
+        minHeight: '220px',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
         gap: '4px',
-        padding: '0.5rem',
+        padding: '0.75rem',
         background: 'var(--bg-input)',
-        borderRadius: 'var(--radius-sm)'
+        borderRadius: 'var(--radius-sm)',
       }}
     >
       {logs.map((log, idx) => {
@@ -130,7 +161,7 @@ export function ActivityTab({ logs }: { logs: SyncLogEntry[] }): React.JSX.Eleme
 
 export function FailedTab({
   items,
-  onRetry
+  onRetry,
 }: {
   items: FailedItem[];
   onRetry: () => void;
@@ -149,7 +180,7 @@ export function FailedTab({
         style={{
           display: 'flex',
           justifyContent: 'flex-end',
-          marginBottom: '0.5rem'
+          marginBottom: '0.5rem',
         }}
       >
         <button
@@ -160,7 +191,7 @@ export function FailedTab({
             color: '#fff',
             borderRadius: 'var(--radius-sm)',
             fontSize: '0.8rem',
-            fontWeight: 500
+            fontWeight: 500,
           }}
         >
           Retry Failed
@@ -172,7 +203,7 @@ export function FailedTab({
             style={{
               textAlign: 'left',
               borderBottom: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)'
+              color: 'var(--text-secondary)',
             }}
           >
             <th style={{ padding: '6px' }}>File</th>
@@ -198,7 +229,7 @@ export function FailedTab({
 
 export function RestoredTab({
   items,
-  onReveal
+  onReveal,
 }: {
   items: RestoredItem[];
   onReveal: (path: string) => void;
@@ -218,7 +249,7 @@ export function RestoredTab({
           style={{
             textAlign: 'left',
             borderBottom: '1px solid var(--border-subtle)',
-            color: 'var(--text-secondary)'
+            color: 'var(--text-secondary)',
           }}
         >
           <th style={{ padding: '6px' }}>Original Path</th>
@@ -243,7 +274,7 @@ export function RestoredTab({
                   background: 'var(--bg-surface-elevated)',
                   color: 'var(--accent-blue)',
                   borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
                 }}
               >
                 Show in Finder
@@ -265,6 +296,21 @@ export function HistoryTab({ runs }: { runs: SyncRunHistory[] }): React.JSX.Elem
     );
   }
 
+  const getStatusColor = (status: SyncRunHistory['status']): string => {
+    switch (status) {
+      case 'completed':
+        return 'var(--accent-green)';
+      case 'cancelled':
+        return 'var(--accent-amber)';
+      case 'failed':
+        return 'var(--accent-red)';
+      case 'running':
+        return 'var(--accent-blue)';
+      default:
+        return 'var(--text-secondary)';
+    }
+  };
+
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
       <thead>
@@ -272,9 +318,10 @@ export function HistoryTab({ runs }: { runs: SyncRunHistory[] }): React.JSX.Elem
           style={{
             textAlign: 'left',
             borderBottom: '1px solid var(--border-subtle)',
-            color: 'var(--text-secondary)'
+            color: 'var(--text-secondary)',
           }}
         >
+          <th style={{ padding: '6px' }}>Job</th>
           <th style={{ padding: '6px' }}>Started</th>
           <th style={{ padding: '6px' }}>Status</th>
           <th style={{ padding: '6px' }}>Downloaded</th>
@@ -286,12 +333,15 @@ export function HistoryTab({ runs }: { runs: SyncRunHistory[] }): React.JSX.Elem
       <tbody>
         {runs.map((r) => (
           <tr key={r.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <td style={{ padding: '6px', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+              Job #{r.id}
+            </td>
             <td style={{ padding: '6px' }}>{new Date(r.startedAt).toLocaleString()}</td>
             <td
               style={{
                 padding: '6px',
                 fontWeight: 600,
-                color: r.status === 'completed' ? 'var(--accent-green)' : 'var(--accent-amber)'
+                color: getStatusColor(r.status),
               }}
             >
               {r.status.toUpperCase()}

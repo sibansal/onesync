@@ -10,36 +10,20 @@ Author: https://sibansal.dev/
 
 ---
 
-## 📷 Preview
-
-```
-+-----------------------------------------------------------------------+
-|  OneSync                user@example.com (34.2 GB / 100 GB)     [Sync] |
-|  Destination: /Volumes/BackupDrive/OneDriveMirror                      |
-+-----------------------------------------------------------------------+
-|  Phase: Downloading (4 workers)                 Speed: 18.4 MB/s       |
-|  [==================================>             ] 64% (12.4 / 19 GB) |
-|  Active Downloads:                                                    |
-|  - Documents/Tax2025.pdf (1.2 MB / 4.5 MB)                           |
-|  - Media/Keynote.mov     (450 MB / 1.2 GB)                            |
-|                                                                       |
-|  [Activity (142)]   [Failed (0)]   [Restored (3)]   [History (8)]     |
-+-----------------------------------------------------------------------+
-|  Made by sibansal.dev                                                  |
-+-----------------------------------------------------------------------+
-```
-
----
-
 ## ✨ Features
 
 - **Strict One-Way Mirroring:** Only reads from OneDrive (`Files.Read`, `User.Read`, `offline_access`). Never uploads, edits, or deletes anything in your cloud OneDrive.
+- **Flexible Source Selection:** Mirror your entire OneDrive root (`/`) or select a single directory (e.g. `/Documents`) directly from the dashboard.
+- **Job ID Tracking & History:** Every synchronization run is tracked with a unique incremental Job ID (`Job #1`, `Job #2`, ...) displayed across real-time progress, logs, and history tables.
+- **Instant Cancel & Restart:** Clean, instantaneous cancellation without retry loops, with a prominent "↻ Restart Sync" button to resume immediately.
+- **Clear Database & Re-index:** Reset local SQLite tracking index (`state.db`) at any time to perform a complete re-scan without deleting existing disk files.
 - **Data Protection Guarantee:** Local files are never deleted. Anything removed from OneDrive or locally modified is safely moved to `<SelectedFolder>/restored/`.
 - **Atomic Downloads & Resumption:** Files are downloaded into `<SelectedFolder>/.onesync/tmp/*.part`, verified via cryptographic hashes (SHA-256, SHA-1, QuickXorHash), and atomically renamed. Broken downloads resume with HTTP Range requests.
 - **External Volume Verification:** Checks that destinations are genuinely mounted external drives under `/Volumes/` with a distinct filesystem device (`stat.dev`), preventing accidental filling of internal storage.
-- **Drive-Portable SQLite Database:** Sync state is recorded in `<SelectedFolder>/.onesync/state.db` using WAL-safe synchronous modes, traveling with your external drive.
-- **Mass-Move Protection:** Prevents catastrophic accidental moves if OneDrive reports widespread deletions.
+- **Drive-Portable SQLite Database:** Sync state is recorded in `<SelectedFolder>/.onesync/state.db` using crash-safe synchronous modes, traveling with your external drive.
+- **Modern Dynamic Layout:** Designed for macOS with dark aesthetics, minimum 800 px window height, and dynamic downward expansion for activity console logs and audit tables.
 - **Apple Silicon Optimized:** Native `darwin-arm64` binary with hardened runtime and macOS Keychain integration via Electron `safeStorage`.
+
 
 ---
 
