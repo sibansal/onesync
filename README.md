@@ -22,6 +22,7 @@ Author: https://sibansal.dev/
 - **External Volume Verification:** Checks that destinations are genuinely mounted external drives under `/Volumes/` with a distinct filesystem device (`stat.dev`), preventing accidental filling of internal storage.
 - **Drive-Portable SQLite Database:** Sync state is recorded in `<SelectedFolder>/.onesync/state.db` using crash-safe synchronous modes, traveling with your external drive.
 - **Modern Dynamic Layout:** Designed for macOS with dark aesthetics, minimum 800 px window height, and dynamic downward expansion for activity console logs and audit tables.
+- **Prevent System Sleep (Keep Awake):** Toggle system sleep prevention right from the dashboard header with a single click. When active (yellow sun), Electron `powerSaveBlocker` keeps macOS awake during long sync sessions.
 - **Apple Silicon Optimized:** Native `darwin-arm64` binary with hardened runtime and macOS Keychain integration via Electron `safeStorage`.
 
 

@@ -21,6 +21,7 @@ function isAllowedUrl(urlString: string): boolean {
 }
 
 import { setupIpcHandlers } from './ipc';
+import { cleanupSleepBlocker } from './sleepBlocker';
 import type { AuthService } from './auth/authService';
 
 let syncEngineRef: { getState: () => { isRunning: boolean } } | null = null;
@@ -280,5 +281,9 @@ if (!gotTheLock) {
     if (process.platform !== 'darwin') {
       app.quit();
     }
+  });
+
+  app.on('will-quit', () => {
+    cleanupSleepBlocker();
   });
 }

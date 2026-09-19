@@ -9,6 +9,7 @@ import { GraphDrive } from './onedrive/graphDrive';
 import { MockDrive } from './onedrive/mockDrive';
 import { validateDestination, verifyMounted } from './fs/volume';
 import { settingsStore } from './settingsStore';
+import { initSleepBlocker, isPreventSleepActive, setPreventSleep } from './sleepBlocker';
 import { config } from './config';
 import { logger, getLogFilePath } from './logger';
 import type { RemoteDrive } from './onedrive/remoteDrive';
@@ -89,6 +90,7 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
   if (savedSettings.sourceFolder) {
     syncEngine.setSourceFolder(savedSettings.sourceFolder);
   }
+  initSleepBlocker();
 
   // Monitor drive mount status every 3 seconds
   if (statusInterval) {
@@ -368,6 +370,18 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
       activeMainWindow.focus();
       activeMainWindow.webContents.send('app:openAbout');
     }
+  });
+
+  safeHandle(IPC_CHANNELS.SYSTEM_GET_PREVENT_SLEEP, async () => {
+    return isPreventSleepActive();
+  });
+
+  safeHandle(IPC_CHANNELS.SYSTEM_SET_PREVENT_SLEEP, async (_event, enabled: unknown) => {
+    const parsed = z.boolean().safeParse(enabled);
+    if (!parsed.success) {
+      return isPreventSleepActive();
+    }
+    return setPreventSleep(parsed.data);
   });
 
   services = { authService, syncEngine, remoteDrive };

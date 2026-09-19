@@ -171,6 +171,8 @@ export interface OneSyncAPI {
   openLogs: () => Promise<void>;
   openAuthorSite: () => Promise<void>;
   openAbout: () => Promise<void>;
+  getPreventSleep: () => Promise<boolean>;
+  setPreventSleep: (enabled: boolean) => Promise<boolean>;
 
   // Event Listeners
   onSyncState: (callback: (state: SyncState) => void) => () => void;

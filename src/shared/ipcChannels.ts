@@ -36,6 +36,8 @@ export const IPC_CHANNELS = {
   SYSTEM_OPEN_LOGS: 'system:openLogs',
   SYSTEM_OPEN_AUTHOR_SITE: 'system:openAuthorSite',
   SYSTEM_OPEN_ABOUT: 'system:openAbout',
+  SYSTEM_GET_PREVENT_SLEEP: 'system:getPreventSleep',
+  SYSTEM_SET_PREVENT_SLEEP: 'system:setPreventSleep',
 
   // Events (Main -> Renderer)
   EVENT_SYNC_STATE: 'sync:state',

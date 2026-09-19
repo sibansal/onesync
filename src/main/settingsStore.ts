@@ -7,12 +7,14 @@ export interface AppSettings {
   destinationPath: string | null;
   accountId: string | null;
   sourceFolder: string | null;
+  preventSleep: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   destinationPath: null,
   accountId: null,
   sourceFolder: null,
+  preventSleep: false,
 };
 
 class SettingsStore {
@@ -45,6 +47,7 @@ class SettingsStore {
             typeof parsed.destinationPath === 'string' ? parsed.destinationPath : null,
           accountId: typeof parsed.accountId === 'string' ? parsed.accountId : null,
           sourceFolder: typeof parsed.sourceFolder === 'string' ? parsed.sourceFolder : null,
+          preventSleep: typeof parsed.preventSleep === 'boolean' ? parsed.preventSleep : false,
         };
       }
     } catch (err) {
@@ -82,6 +85,15 @@ class SettingsStore {
 
   public getSourceFolder(): string | null {
     return this.settings.sourceFolder;
+  }
+
+  public setPreventSleep(preventSleep: boolean): void {
+    this.settings.preventSleep = preventSleep;
+    this.save();
+  }
+
+  public getPreventSleep(): boolean {
+    return this.settings.preventSleep;
   }
 
   public clear(): void {

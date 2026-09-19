@@ -79,6 +79,17 @@ OneSync provides a bulletproof, **one-way mirror** of OneDrive onto an external 
   - Available in Settings menu (`⚙`).
   - Confirms action with user, closes and recreates fresh `state.db`, and resets pending sync state.
 
+### US-6: Prevent System Sleep (Keep Awake)
+- **As a** user,
+- **I want to** toggle system sleep prevention directly from the dashboard header,
+- **So that** my Mac stays awake during large file transfers without going into sleep mode.
+- **Acceptance Criteria:**
+  - Dedicated sun icon button placed directly adjacent to the settings button (`⚙`).
+  - When enabled, the sun icon illuminates in radiant yellow/amber with an active glow, keeping the system awake via Electron's `powerSaveBlocker` (`prevent-app-suspension`).
+  - When disabled, the sun icon is rendered in neutral outline style, allowing standard macOS power saving and sleep.
+  - Hovering over the button displays an informative tooltip indicating the current sleep prevention status.
+  - Preference persists across application restarts in `settings.json`.
+
 ---
 
 ## 5. Screen Specifications & States
