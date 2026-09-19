@@ -18,14 +18,33 @@ import type {
   SyncLogEntry,
   DriveStatus,
   AccountInfo,
-  DriveQuota
+  DriveQuota,
 } from '../shared/types';
+
+let activeMainWindow: BrowserWindow | null = null;
+let services: {
+  authService: AuthService;
+  syncEngine: SyncEngine;
+  remoteDrive: RemoteDrive;
+} | null = null;
+let statusInterval: NodeJS.Timeout | null = null;
+
+function safeHandle(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
+  ipcMain.removeHandler(channel);
+  ipcMain.handle(channel, handler);
+}
 
 export function setupIpcHandlers(mainWindow: BrowserWindow): {
   authService: AuthService;
   syncEngine: SyncEngine;
   remoteDrive: RemoteDrive;
 } {
+  activeMainWindow = mainWindow;
+
+  if (services) {
+    return services;
+  }
+
   const authService = new AuthService();
   let remoteDrive: RemoteDrive;
 
@@ -41,25 +60,25 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
 
   const syncEngine = new SyncEngine(remoteDrive, {
     onStateChange: (state: SyncState) => {
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.EVENT_SYNC_STATE, state);
+      if (activeMainWindow && !activeMainWindow.isDestroyed()) {
+        activeMainWindow.webContents.send(IPC_CHANNELS.EVENT_SYNC_STATE, state);
       }
     },
     onProgress: (progress: SyncProgress) => {
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.EVENT_SYNC_PROGRESS, progress);
+      if (activeMainWindow && !activeMainWindow.isDestroyed()) {
+        activeMainWindow.webContents.send(IPC_CHANNELS.EVENT_SYNC_PROGRESS, progress);
       }
     },
     onLog: (entry: SyncLogEntry) => {
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.EVENT_SYNC_LOG, entry);
+      if (activeMainWindow && !activeMainWindow.isDestroyed()) {
+        activeMainWindow.webContents.send(IPC_CHANNELS.EVENT_SYNC_LOG, entry);
       }
     },
     onDriveStatus: (status: DriveStatus) => {
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.EVENT_DRIVE_STATUS, status);
+      if (activeMainWindow && !activeMainWindow.isDestroyed()) {
+        activeMainWindow.webContents.send(IPC_CHANNELS.EVENT_DRIVE_STATUS, status);
       }
-    }
+    },
   });
 
   // Restore saved destination and account
@@ -67,25 +86,29 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
   if (savedSettings.destinationPath) {
     syncEngine.setDestination(savedSettings.destinationPath);
   }
+  if (savedSettings.sourceFolder) {
+    syncEngine.setSourceFolder(savedSettings.sourceFolder);
+  }
 
   // Monitor drive mount status every 3 seconds
-  setInterval(() => {
+  if (statusInterval) {
+    clearInterval(statusInterval);
+  }
+  statusInterval = setInterval(() => {
     const currentDest = settingsStore.getSettings().destinationPath;
-    if (currentDest) {
+    if (currentDest && activeMainWindow && !activeMainWindow.isDestroyed()) {
       const isMounted = verifyMounted(currentDest);
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.EVENT_DRIVE_STATUS, {
-          connected: isMounted,
-          path: currentDest
-        });
-      }
+      activeMainWindow.webContents.send(IPC_CHANNELS.EVENT_DRIVE_STATUS, {
+        connected: isMounted,
+        path: currentDest,
+      });
     }
   }, 3000);
 
   // --------------------------------------------------------------------------
   // AUTH IPC
   // --------------------------------------------------------------------------
-  ipcMain.handle(IPC_CHANNELS.AUTH_GET_STATUS, async () => {
+  safeHandle(IPC_CHANNELS.AUTH_GET_STATUS, async () => {
     let account: AccountInfo | null = null;
     let quota: DriveQuota | null = null;
 
@@ -119,11 +142,11 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     return {
       signedIn: account !== null,
       account,
-      quota
+      quota,
     };
   });
 
-  ipcMain.handle(IPC_CHANNELS.AUTH_SIGN_IN, async () => {
+  safeHandle(IPC_CHANNELS.AUTH_SIGN_IN, async () => {
     try {
       if (config.useMockDrive) {
         logger.info('MockDrive enabled: signing in with mock account');
@@ -141,12 +164,12 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
       logger.error('Sign-in failed:', err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : String(err)
+        error: err instanceof Error ? err.message : String(err),
       };
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.AUTH_SIGN_OUT, async () => {
+  safeHandle(IPC_CHANNELS.AUTH_SIGN_OUT, async () => {
     try {
       if (!config.useMockDrive) {
         await authService.signOut();
@@ -163,12 +186,14 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
   // --------------------------------------------------------------------------
   // DESTINATION IPC
   // --------------------------------------------------------------------------
-  ipcMain.handle(IPC_CHANNELS.DEST_PICK_FOLDER, async () => {
+  safeHandle(IPC_CHANNELS.DEST_PICK_FOLDER, async () => {
     const defaultPath = existsSync('/Volumes') ? '/Volumes' : undefined;
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const parentWin =
+      activeMainWindow && !activeMainWindow.isDestroyed() ? activeMainWindow : undefined;
+    const result = await dialog.showOpenDialog(parentWin!, {
       title: 'Select Folder on External Drive',
       defaultPath,
-      properties: ['openDirectory', 'createDirectory']
+      properties: ['openDirectory', 'createDirectory'],
     });
 
     if (result.canceled || result.filePaths.length === 0) {
@@ -178,7 +203,7 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     return result.filePaths[0] ?? null;
   });
 
-  ipcMain.handle(IPC_CHANNELS.DEST_VALIDATE, async (_event, folderPath: unknown) => {
+  safeHandle(IPC_CHANNELS.DEST_VALIDATE, async (_event, folderPath: unknown) => {
     const parsed = z.string().safeParse(folderPath);
     if (!parsed.success) {
       throw new Error('Invalid folder path');
@@ -193,11 +218,11 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     return validation;
   });
 
-  ipcMain.handle(IPC_CHANNELS.DEST_GET_CURRENT, async () => {
+  safeHandle(IPC_CHANNELS.DEST_GET_CURRENT, async () => {
     return settingsStore.getSettings().destinationPath;
   });
 
-  ipcMain.handle(IPC_CHANNELS.DEST_CLEAR, async () => {
+  safeHandle(IPC_CHANNELS.DEST_CLEAR, async () => {
     settingsStore.setDestination(null);
     syncEngine.setDestination(null);
   });
@@ -205,44 +230,41 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
   // --------------------------------------------------------------------------
   // SYNC CONTROLS IPC
   // --------------------------------------------------------------------------
-  ipcMain.handle(IPC_CHANNELS.SYNC_START, async (_event, rawOptions?: unknown) => {
-    const parsed = z
-      .object({ force: z.boolean().optional() })
-      .optional()
-      .safeParse(rawOptions);
+  safeHandle(IPC_CHANNELS.SYNC_START, async (_event, rawOptions?: unknown) => {
+    const parsed = z.object({ force: z.boolean().optional() }).optional().safeParse(rawOptions);
     const options = parsed.success ? parsed.data : {};
     return syncEngine.startSync(options);
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYNC_PAUSE, async () => {
+  safeHandle(IPC_CHANNELS.SYNC_PAUSE, async () => {
     syncEngine.pauseSync();
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYNC_RESUME, async () => {
+  safeHandle(IPC_CHANNELS.SYNC_RESUME, async () => {
     syncEngine.resumeSync();
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYNC_CANCEL, async () => {
+  safeHandle(IPC_CHANNELS.SYNC_CANCEL, async () => {
     syncEngine.cancelSync();
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYNC_CONFIRM_MASS_MOVE, async (_event, allow: unknown) => {
+  safeHandle(IPC_CHANNELS.SYNC_CONFIRM_MASS_MOVE, async (_event, allow: unknown) => {
     const parsed = z.boolean().safeParse(allow);
     syncEngine.confirmMassMove(parsed.success ? parsed.data : false);
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYNC_RETRY_FAILED, async () => {
+  safeHandle(IPC_CHANNELS.SYNC_RETRY_FAILED, async () => {
     return syncEngine.startSync({ force: true });
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYNC_VERIFY_INTEGRITY, async () => {
+  safeHandle(IPC_CHANNELS.SYNC_VERIFY_INTEGRITY, async () => {
     return syncEngine.startSync({ force: true });
   });
 
   // --------------------------------------------------------------------------
   // DATA QUERIES IPC
   // --------------------------------------------------------------------------
-  ipcMain.handle(IPC_CHANNELS.DATA_GET_FAILED, async () => {
+  safeHandle(IPC_CHANNELS.DATA_GET_FAILED, async () => {
     try {
       const { itemsRepo } = syncEngine.getDb();
       return itemsRepo.getFailedItems();
@@ -251,7 +273,7 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.DATA_GET_RESTORED, async () => {
+  safeHandle(IPC_CHANNELS.DATA_GET_RESTORED, async () => {
     try {
       const { restoredLogRepo } = syncEngine.getDb();
       return restoredLogRepo.getRecent(100);
@@ -260,7 +282,7 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.DATA_GET_HISTORY, async () => {
+  safeHandle(IPC_CHANNELS.DATA_GET_HISTORY, async () => {
     try {
       const { syncRunsRepo } = syncEngine.getDb();
       return syncRunsRepo.getHistory(20);
@@ -269,10 +291,43 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     }
   });
 
+  safeHandle(IPC_CHANNELS.DATA_CLEAR_DB, async () => {
+    return syncEngine.clearDatabase();
+  });
+
+  // --------------------------------------------------------------------------
+  // SOURCE FOLDER IPC
+  // --------------------------------------------------------------------------
+  safeHandle(IPC_CHANNELS.SOURCE_GET, async () => {
+    return settingsStore.getSourceFolder();
+  });
+
+  safeHandle(IPC_CHANNELS.SOURCE_SET, async (_event, folderPath: unknown) => {
+    const parsed = z.string().nullable().safeParse(folderPath);
+    if (!parsed.success) {
+      throw new Error('Invalid source folder path');
+    }
+    settingsStore.setSourceFolder(parsed.data);
+    syncEngine.setSourceFolder(parsed.data);
+    return { success: true };
+  });
+
+  safeHandle(IPC_CHANNELS.SOURCE_LIST_FOLDERS, async () => {
+    try {
+      if (remoteDrive.listRootFolders) {
+        return await remoteDrive.listRootFolders();
+      }
+      return [];
+    } catch (err) {
+      logger.error('Failed to list root folders:', err);
+      return [];
+    }
+  });
+
   // --------------------------------------------------------------------------
   // SYSTEM IPC
   // --------------------------------------------------------------------------
-  ipcMain.handle(
+  safeHandle(
     IPC_CHANNELS.SYSTEM_REVEAL_IN_FINDER,
     async (_event, relPath: unknown, folderType?: unknown) => {
       const p = z.string().safeParse(relPath);
@@ -286,10 +341,10 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
           shell.openPath(join(dest, sub));
         }
       }
-    }
+    },
   );
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM_OPEN_LOGS, async () => {
+  safeHandle(IPC_CHANNELS.SYSTEM_OPEN_LOGS, async () => {
     const logPath = getLogFilePath();
     if (existsSync(logPath)) {
       shell.showItemInFolder(logPath);
@@ -298,17 +353,18 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM_OPEN_AUTHOR_SITE, async () => {
+  safeHandle(IPC_CHANNELS.SYSTEM_OPEN_AUTHOR_SITE, async () => {
     await shell.openExternal('https://sibansal.dev/');
   });
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM_OPEN_ABOUT, async () => {
-    if (!mainWindow.isDestroyed()) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-      mainWindow.webContents.send('app:openAbout');
+  safeHandle(IPC_CHANNELS.SYSTEM_OPEN_ABOUT, async () => {
+    if (activeMainWindow && !activeMainWindow.isDestroyed()) {
+      if (activeMainWindow.isMinimized()) activeMainWindow.restore();
+      activeMainWindow.focus();
+      activeMainWindow.webContents.send('app:openAbout');
     }
   });
 
-  return { authService, syncEngine, remoteDrive };
+  services = { authService, syncEngine, remoteDrive };
+  return services;
 }

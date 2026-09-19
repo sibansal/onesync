@@ -25,7 +25,8 @@ log.transports.console.level = config.logLevel;
 // Redaction patterns
 const BEARER_TOKEN_REGEX = /Bearer\s+[A-Za-z0-9._~+/-]+=*/gi;
 const ACCESS_TOKEN_REGEX = /(?:access_token|refresh_token|token|code)=([^& \s"']+)/gi;
-const DOWNLOAD_URL_REGEX = /https:\/\/[^ \t\r\n"']+(?:sharepoint\.com|1drv\.ms|download\.aspx)[^ \t\r\n"']*/gi;
+const DOWNLOAD_URL_REGEX =
+  /https:\/\/[^ \t\r\n"']+(?:sharepoint\.com|1drv\.ms|download\.aspx)[^ \t\r\n"']*/gi;
 
 export function redactSensitive(text: string): string {
   if (!text || typeof text !== 'string') return text;
@@ -62,5 +63,5 @@ export const logger = {
   debug: (...params: unknown[]) => log.debug(...params),
   info: (...params: unknown[]) => log.info(...params),
   warn: (...params: unknown[]) => log.warn(...params),
-  error: (...params: unknown[]) => log.error(...params)
+  error: (...params: unknown[]) => log.error(...params),
 };

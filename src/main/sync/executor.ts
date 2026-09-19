@@ -48,7 +48,7 @@ export interface ExecutorResult {
 
 export async function executePlan(
   actions: PlanAction[],
-  options: ExecutorOptions
+  options: ExecutorOptions,
 ): Promise<ExecutorResult> {
   const {
     baseFolder,
@@ -57,7 +57,7 @@ export async function executePlan(
     restoredLogRepo,
     concurrency = config.syncConcurrency,
     onProgress,
-    signal
+    signal,
   } = options;
 
   const onedriveRoot = join(baseFolder, 'onedrive');
@@ -109,7 +109,7 @@ export async function executePlan(
       downloadedCount,
       upToDateCount,
       restoredCount,
-      failedCount
+      failedCount,
     });
   }
 
@@ -142,7 +142,7 @@ export async function executePlan(
           case 'FAIL_PERMANENT':
             itemsRepo.markFailedPermanent(item.id, {
               errorCode: action.errorCode || 'FS_LIMIT',
-              errorMessage: action.errorMessage || 'Permanent failure'
+              errorMessage: action.errorMessage || 'Permanent failure',
             });
             failedCount++;
             filesDone++;
@@ -170,7 +170,7 @@ export async function executePlan(
                 localSize: s.size,
                 localMtimeMs: Math.round(s.mtimeMs),
                 syncedFingerprint: item.fingerprint,
-                syncedAt: Date.now()
+                syncedAt: Date.now(),
               });
             }
             upToDateCount++;
@@ -187,7 +187,7 @@ export async function executePlan(
                 localSize: s.size,
                 localMtimeMs: Math.round(s.mtimeMs),
                 syncedFingerprint: item.fingerprint,
-                syncedAt: Date.now()
+                syncedAt: Date.now(),
               });
             }
             upToDateCount++;
@@ -210,7 +210,7 @@ export async function executePlan(
                 localSize: s.size,
                 localMtimeMs: Math.round(s.mtimeMs),
                 syncedFingerprint: item.fingerprint,
-                syncedAt: Date.now()
+                syncedAt: Date.now(),
               });
               upToDateCount++;
               filesDone++;
@@ -220,12 +220,12 @@ export async function executePlan(
               const restoredRel = moveToRestored({
                 baseFolder,
                 sourceFullPath: targetFullPath,
-                relativePath: desiredPath
+                relativePath: desiredPath,
               });
               restoredLogRepo.log(
                 desiredPath,
                 restoredRel,
-                action.conflictReason || 'local_modified'
+                action.conflictReason || 'local_modified',
               );
               restoredCount++;
 
@@ -240,12 +240,12 @@ export async function executePlan(
               const restoredRel = moveToRestored({
                 baseFolder,
                 sourceFullPath: targetFullPath,
-                relativePath: desiredPath
+                relativePath: desiredPath,
               });
               restoredLogRepo.log(
                 desiredPath,
                 restoredRel,
-                action.conflictReason || 'local_modified'
+                action.conflictReason || 'local_modified',
               );
               restoredCount++;
             }
@@ -282,22 +282,25 @@ export async function executePlan(
           if (!itemErr.retriable) {
             itemsRepo.markFailedPermanent(item.id, {
               errorCode: itemErr.code,
-              errorMessage: itemErr.message
+              errorMessage: itemErr.message,
             });
           } else {
             // Cross-run retry schedule: 5min * 2^retry_count, capped at 24h
-            const nextRetryDelay = Math.min(5 * 60 * 1000 * Math.pow(2, item.retry_count), 24 * 3600 * 1000);
+            const nextRetryDelay = Math.min(
+              5 * 60 * 1000 * Math.pow(2, item.retry_count),
+              24 * 3600 * 1000,
+            );
             itemsRepo.markFailed(item.id, {
               errorCode: itemErr.code,
               errorMessage: itemErr.message,
-              nextRetryAt: Date.now() + nextRetryDelay
+              nextRetryAt: Date.now() + nextRetryDelay,
             });
           }
         } else {
           itemsRepo.markFailed(item.id, {
             errorCode: 'UNKNOWN',
             errorMessage: itemErr instanceof Error ? itemErr.message : String(itemErr),
-            nextRetryAt: Date.now() + 5 * 60 * 1000
+            nextRetryAt: Date.now() + 5 * 60 * 1000,
           });
         }
 
@@ -312,7 +315,7 @@ export async function executePlan(
           id: item.id,
           name: item.name,
           bytesDone: 0,
-          totalBytes: item.size
+          totalBytes: item.size,
         });
 
         try {
@@ -322,7 +325,7 @@ export async function executePlan(
                 throw new SyncError({
                   code: 'CANCELLED',
                   message: 'Sync was cancelled by user',
-                  retriable: false
+                  retriable: false,
                 });
               }
 
@@ -334,7 +337,7 @@ export async function executePlan(
                 throw new SyncError({
                   code: 'CANCELLED',
                   message: 'Sync was cancelled by user',
-                  retriable: false
+                  retriable: false,
                 });
               }
 
@@ -347,7 +350,7 @@ export async function executePlan(
                   size: item.size,
                   fingerprint: item.fingerprint,
                   hashType: item.hash_type,
-                  remoteModified: item.remote_modified
+                  remoteModified: item.remote_modified,
                 },
                 desiredPath,
                 {
@@ -364,17 +367,17 @@ export async function executePlan(
                       id: item.id,
                       name: item.name,
                       bytesDone: update.bytesDone,
-                      totalBytes: update.totalBytes
+                      totalBytes: update.totalBytes,
                     });
                     reportProgress();
-                  }
-                }
+                  },
+                },
               );
             },
             {
               maxRetries: config.maxRetries,
-              baseDelayMs: config.retryBaseDelayMs
-            }
+              baseDelayMs: config.retryBaseDelayMs,
+            },
           );
 
           downloadedCount++;
@@ -385,7 +388,7 @@ export async function executePlan(
         }
       }
     },
-    { concurrency, signal }
+    { concurrency, signal },
   );
 
   return {
@@ -393,6 +396,6 @@ export async function executePlan(
     skipped: upToDateCount,
     restored: restoredCount,
     failed: failedCount,
-    bytes: totalBytesDone
+    bytes: totalBytesDone,
   };
 }

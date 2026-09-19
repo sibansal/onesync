@@ -40,7 +40,7 @@ export interface RetryOptions {
 
 export async function withRetry<T>(
   fn: (attempt: number) => Promise<T>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<T> {
   const maxRetries = options.maxRetries ?? 5;
   const baseDelayMs = options.baseDelayMs ?? 1000;

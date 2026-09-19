@@ -23,6 +23,12 @@ export const IPC_CHANNELS = {
   DATA_GET_FAILED: 'data:getFailed',
   DATA_GET_RESTORED: 'data:getRestored',
   DATA_GET_HISTORY: 'data:getHistory',
+  DATA_CLEAR_DB: 'data:clearDb',
+
+  // Source folder
+  SOURCE_GET: 'source:get',
+  SOURCE_SET: 'source:set',
+  SOURCE_LIST_FOLDERS: 'source:listFolders',
 
   // System
   SYSTEM_REVEAL_IN_FINDER: 'system:revealInFinder',
@@ -34,5 +40,5 @@ export const IPC_CHANNELS = {
   EVENT_SYNC_STATE: 'sync:state',
   EVENT_SYNC_PROGRESS: 'sync:progress',
   EVENT_SYNC_LOG: 'sync:log',
-  EVENT_DRIVE_STATUS: 'drive:status'
+  EVENT_DRIVE_STATUS: 'drive:status',
 } as const;

@@ -13,7 +13,7 @@ describe('SyncEngine with MockDrive', () => {
     onStateChange: vi.fn(),
     onProgress: vi.fn(),
     onLog: vi.fn(),
-    onDriveStatus: vi.fn()
+    onDriveStatus: vi.fn(),
   };
 
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe('SyncEngine with MockDrive', () => {
     engine.setAccount({
       id: 'mock_user_account_id',
       name: 'Mock User',
-      email: 'mock@example.com'
+      email: 'mock@example.com',
     });
   });
 
@@ -121,7 +121,7 @@ describe('SyncEngine with MockDrive', () => {
     engine.setAccount({
       id: 'other_user_account_id',
       name: 'Other User',
-      email: 'other@example.com'
+      email: 'other@example.com',
     });
 
     const result = await engine.startSync();
@@ -160,5 +160,67 @@ describe('SyncEngine with MockDrive', () => {
     const result = await syncPromise;
     expect(result.success).toBe(true);
     expect(engine.getState().isRunning).toBe(false);
+  });
+
+  it('associates Job ID with every sync job, records status: cancelled, and allows restart', async () => {
+    mockDrive.addFile('f1', 'root', 'job_file.txt', 'job content');
+
+    // Run 1: cancel mid-run
+    const sync1 = engine.startSync();
+    await new Promise((r) => setTimeout(r, 5));
+    engine.cancelSync();
+    const res1 = await sync1;
+    expect(res1.success).toBe(false);
+    expect(engine.getState().isCancelled).toBe(true);
+    expect(engine.getState().jobId).toBe('Job #1');
+
+    const historyAfterCancel = engine.getDb().syncRunsRepo.getHistory(5);
+    expect(historyAfterCancel[0]?.status).toBe('cancelled');
+    expect(historyAfterCancel[0]?.id).toBe(1);
+
+    // Restart Sync (Run 2)
+    const sync2 = await engine.startSync();
+    expect(sync2.success).toBe(true);
+    expect(engine.getState().jobId).toBe('Job #2');
+    expect(engine.getState().isCancelled).toBe(false);
+
+    const historyAfterRestart = engine.getDb().syncRunsRepo.getHistory(5);
+    expect(historyAfterRestart[0]?.status).toBe('completed');
+    expect(historyAfterRestart[0]?.id).toBe(2);
+  });
+
+  it('clears database and resets indexing state cleanly', async () => {
+    mockDrive.addFile('f1', 'root', 'fileA.txt', 'AAA');
+    await engine.startSync();
+
+    const dbPath = join(testDir, '.onesync', 'state.db');
+    expect(existsSync(dbPath)).toBe(true);
+
+    const clearRes = engine.clearDatabase();
+    expect(clearRes.success).toBe(true);
+    expect(engine.getState().jobId).toBeNull();
+    expect(engine.getState().phase).toBe('idle');
+
+    // Newly recreated database should have 0 items
+    const { itemsRepo } = engine.getDb();
+    expect(itemsRepo.getCount()).toBe(0);
+  });
+
+  it('filters synchronization when a single source directory is selected', async () => {
+    mockDrive.addFolder('docs', 'root', 'Documents');
+    mockDrive.addFile('doc1', 'docs', 'report.pdf', 'PDF report');
+    mockDrive.addFolder('pics', 'root', 'Pictures');
+    mockDrive.addFile('pic1', 'pics', 'photo.jpg', 'JPG image');
+
+    // Scope to /Documents
+    engine.setSourceFolder('/Documents');
+    expect(engine.getSourceFolder()).toBe('/Documents');
+
+    const res = await engine.startSync();
+    expect(res.success).toBe(true);
+
+    // Only Documents should be downloaded
+    expect(existsSync(join(testDir, 'onedrive', 'Documents', 'report.pdf'))).toBe(true);
+    expect(existsSync(join(testDir, 'onedrive', 'Pictures', 'photo.jpg'))).toBe(false);
   });
 });

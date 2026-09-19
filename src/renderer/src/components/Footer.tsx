@@ -11,7 +11,7 @@ export function Footer(): React.JSX.Element {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'var(--bg-surface)'
+        background: 'var(--bg-surface)',
       }}
     >
       <span>OneSync — macOS Apple Silicon Mirror</span>
@@ -24,7 +24,7 @@ export function Footer(): React.JSX.Element {
           style={{
             color: 'var(--accent-blue)',
             textDecoration: 'none',
-            fontWeight: 500
+            fontWeight: 500,
           }}
           onClick={(e) => {
             e.preventDefault();

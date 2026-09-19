@@ -11,7 +11,7 @@ const IGNORED_NAMES = new Set([
   '.Trashes',
   '.fseventsd',
   'Thumbs.db',
-  'desktop.ini'
+  'desktop.ini',
 ]);
 
 function isIgnored(name: string): boolean {
@@ -40,7 +40,7 @@ export async function sweepOrphans(options: SweepOptions): Promise<{ movedCount:
     expectedFolderPaths = new Set<string>(),
     restoredLogRepo,
     gatingAllowed,
-    onFileRestored
+    onFileRestored,
   } = options;
 
   if (!gatingAllowed) {
@@ -95,7 +95,7 @@ export async function sweepOrphans(options: SweepOptions): Promise<{ movedCount:
             const restoredRel = moveToRestored({
               baseFolder,
               sourceFullPath: childFullPath,
-              relativePath: childRelPath
+              relativePath: childRelPath,
             });
 
             restoredLogRepo.log(childRelPath, restoredRel, 'not_on_onedrive');

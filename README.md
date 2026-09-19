@@ -34,10 +34,14 @@ Author: https://sibansal.dev/
 ## ✨ Features
 
 - **Strict One-Way Mirroring:** Only reads from OneDrive (`Files.Read`, `User.Read`, `offline_access`). Never uploads, edits, or deletes anything in your cloud OneDrive.
+- **Flexible Source Selection:** Mirror your entire OneDrive root (`/`) or select a single directory (e.g. `/Documents`) directly from the dashboard.
+- **Job ID Tracking & History:** Every synchronization run is tracked with a unique incremental Job ID (`Job #1`, `Job #2`, ...) displayed across real-time progress, logs, and history tables.
+- **Instant Cancel & Restart:** Clean, instantaneous cancellation without retry loops, with a prominent "↻ Restart Sync" button to resume immediately.
+- **Clear Database & Re-index:** Reset local SQLite tracking index (`state.db`) at any time to perform a complete re-scan without deleting existing disk files.
 - **Data Protection Guarantee:** Local files are never deleted. Anything removed from OneDrive or locally modified is safely moved to `<SelectedFolder>/restored/`.
 - **Atomic Downloads & Resumption:** Files are downloaded into `<SelectedFolder>/.onesync/tmp/*.part`, verified via cryptographic hashes (SHA-256, SHA-1, QuickXorHash), and atomically renamed. Broken downloads resume with HTTP Range requests.
 - **External Volume Verification:** Checks that destinations are genuinely mounted external drives under `/Volumes/` with a distinct filesystem device (`stat.dev`), preventing accidental filling of internal storage.
-- **Drive-Portable SQLite Database:** Sync state is recorded in `<SelectedFolder>/.onesync/state.db` using WAL-safe synchronous modes, traveling with your external drive.
+- **Drive-Portable SQLite Database:** Sync state is recorded in `<SelectedFolder>/.onesync/state.db` using crash-safe synchronous modes, traveling with your external drive.
 - **Mass-Move Protection:** Prevents catastrophic accidental moves if OneDrive reports widespread deletions.
 - **Apple Silicon Optimized:** Native `darwin-arm64` binary with hardened runtime and macOS Keychain integration via Electron `safeStorage`.
 

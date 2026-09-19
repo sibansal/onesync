@@ -50,7 +50,7 @@ export function planSyncItem(
   desiredPath: string,
   localItem: LocalSnapshotItem | undefined,
   oldLocalItem: LocalSnapshotItem | undefined,
-  options: PlanSyncOptions = {}
+  options: PlanSyncOptions = {},
 ): PlanAction {
   const now = options.now ?? Date.now();
   const fsType = options.fsType?.toUpperCase() ?? '';
@@ -62,7 +62,8 @@ export function planSyncItem(
       item,
       desiredPath,
       errorCode: 'FS_LIMIT',
-      errorMessage: 'File size exceeds 4 GiB limit on FAT32 volumes. Format drive as APFS or exFAT.'
+      errorMessage:
+        'File size exceeds 4 GiB limit on FAT32 volumes. Format drive as APFS or exFAT.',
     };
   }
 
@@ -76,7 +77,7 @@ export function planSyncItem(
       type: 'SKIP',
       item,
       desiredPath,
-      reason: 'failed_permanent'
+      reason: 'failed_permanent',
     };
   }
 
@@ -91,7 +92,7 @@ export function planSyncItem(
       type: 'SKIP',
       item,
       desiredPath,
-      reason: 'waiting_retry'
+      reason: 'waiting_retry',
     };
   }
 
@@ -107,7 +108,7 @@ export function planSyncItem(
       type: 'RENAME',
       item,
       desiredPath,
-      oldPath: item.local_path
+      oldPath: item.local_path,
     };
   }
 
@@ -118,7 +119,7 @@ export function planSyncItem(
       type: 'DOWNLOAD',
       item,
       desiredPath,
-      isZeroByte
+      isZeroByte,
     };
   }
 
@@ -129,7 +130,7 @@ export function planSyncItem(
       item,
       desiredPath,
       conflictReason: 'type_conflict',
-      isZeroByte
+      isZeroByte,
     };
   }
 
@@ -146,7 +147,7 @@ export function planSyncItem(
         return {
           type: 'ADOPT',
           item,
-          desiredPath
+          desiredPath,
         };
       }
       return {
@@ -154,7 +155,7 @@ export function planSyncItem(
         item,
         desiredPath,
         conflictReason: 'untracked_conflict',
-        isZeroByte
+        isZeroByte,
       };
     }
     // Need hash verification before adopting
@@ -163,7 +164,7 @@ export function planSyncItem(
       item,
       desiredPath,
       conflictReason: 'untracked_conflict',
-      isZeroByte
+      isZeroByte,
     };
   }
 
@@ -173,7 +174,7 @@ export function planSyncItem(
       type: 'SKIP',
       item,
       desiredPath,
-      reason: 'healthy'
+      reason: 'healthy',
     };
   }
 
@@ -184,7 +185,7 @@ export function planSyncItem(
         return {
           type: 'UPDATE_LOCAL_RECORD',
           item,
-          desiredPath
+          desiredPath,
         };
       }
       // Mismatch -> treat as user-modified
@@ -193,7 +194,7 @@ export function planSyncItem(
         item,
         desiredPath,
         conflictReason: 'local_modified',
-        isZeroByte
+        isZeroByte,
       };
     }
     return {
@@ -201,7 +202,7 @@ export function planSyncItem(
       item,
       desiredPath,
       conflictReason: 'local_modified',
-      isZeroByte
+      isZeroByte,
     };
   }
 
@@ -211,7 +212,7 @@ export function planSyncItem(
       type: 'DOWNLOAD',
       item,
       desiredPath,
-      isZeroByte
+      isZeroByte,
     };
   }
 
@@ -221,7 +222,7 @@ export function planSyncItem(
     item,
     desiredPath,
     conflictReason: 'local_modified',
-    isZeroByte
+    isZeroByte,
   };
 }
 
@@ -232,7 +233,7 @@ export function planSync(
   items: DbItem[],
   pathMap: Map<string, string>,
   localSnapshot: Map<string, LocalSnapshotItem>,
-  options: PlanSyncOptions = {}
+  options: PlanSyncOptions = {},
 ): PlanAction[] {
   const actions: PlanAction[] = [];
 

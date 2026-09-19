@@ -37,7 +37,7 @@ describe('orphanSweeper', () => {
       baseFolder: testDir,
       expectedPaths,
       restoredLogRepo: restoredRepo,
-      gatingAllowed: true
+      gatingAllowed: true,
     });
 
     expect(movedCount).toBe(1);
@@ -58,7 +58,7 @@ describe('orphanSweeper', () => {
       baseFolder: testDir,
       expectedPaths: new Set(),
       restoredLogRepo: restoredRepo,
-      gatingAllowed: true
+      gatingAllowed: true,
     });
 
     expect(movedCount).toBe(0);
@@ -73,7 +73,7 @@ describe('orphanSweeper', () => {
       baseFolder: testDir,
       expectedPaths: new Set(),
       restoredLogRepo: restoredRepo,
-      gatingAllowed: false // e.g. aborted or incomplete discovery
+      gatingAllowed: false, // e.g. aborted or incomplete discovery
     });
 
     expect(movedCount).toBe(0);

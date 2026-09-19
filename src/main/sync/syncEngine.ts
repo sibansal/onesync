@@ -21,7 +21,7 @@ import type {
   SyncLogEntry,
   SyncPhase,
   DriveStatus,
-  AccountInfo
+  AccountInfo,
 } from '../../shared/types';
 
 export interface SyncEngineListeners {
@@ -46,6 +46,9 @@ export class SyncEngine {
   private currentPhase: SyncPhase = 'idle';
   private isRunning = false;
   private isPaused = false;
+  private isCancelled = false;
+  private currentJobId: string | null = null;
+  private sourceFolder: string | null = null;
   private prePausedPhase: SyncPhase = 'scanning';
   private isWaitingMassMove = false;
   private pendingMassMoveResolve: ((allow: boolean) => void) | null = null;
@@ -60,7 +63,7 @@ export class SyncEngine {
       throw new SyncError({
         code: 'CANCELLED',
         message: 'Sync was cancelled by user',
-        retriable: false
+        retriable: false,
       });
     }
 
@@ -74,7 +77,7 @@ export class SyncEngine {
       throw new SyncError({
         code: 'CANCELLED',
         message: 'Sync was cancelled by user',
-        retriable: false
+        retriable: false,
       });
     }
   }
@@ -90,6 +93,10 @@ export class SyncEngine {
     if (this.appDb) {
       this.appDb.close();
       this.appDb = null;
+      this.metaRepo = null;
+      this.itemsRepo = null;
+      this.restoredLogRepo = null;
+      this.syncRunsRepo = null;
     }
   }
 
@@ -101,14 +108,79 @@ export class SyncEngine {
     this.remoteDrive = drive;
   }
 
+  public setSourceFolder(folder: string | null): void {
+    if (this.sourceFolder !== folder) {
+      this.sourceFolder = folder;
+      if (this.metaRepo) {
+        this.metaRepo.setDeltaLink('');
+      }
+      this.emitLog('info', `OneDrive source folder set to: ${folder || 'Entire OneDrive (/)'}`);
+    }
+  }
+
+  public getSourceFolder(): string | null {
+    return this.sourceFolder;
+  }
+
+  public clearDatabase(): { success: boolean; error?: string } {
+    if (this.isRunning) {
+      return { success: false, error: 'Cannot clear database while sync is running' };
+    }
+    if (!this.baseFolder) {
+      return { success: false, error: 'No destination folder selected' };
+    }
+
+    try {
+      if (this.appDb) {
+        this.appDb.close();
+        this.appDb = null;
+        this.metaRepo = null;
+        this.itemsRepo = null;
+        this.restoredLogRepo = null;
+        this.syncRunsRepo = null;
+      }
+
+      const dbPath = join(this.baseFolder, '.onesync', 'state.db');
+      const walPath = `${dbPath}-wal`;
+      const shmPath = `${dbPath}-shm`;
+
+      if (existsSync(dbPath)) unlinkSync(dbPath);
+      if (existsSync(walPath)) unlinkSync(walPath);
+      if (existsSync(shmPath)) unlinkSync(shmPath);
+
+      // Re-initialize fresh database
+      this.ensureDatabase();
+      if (this.account) {
+        this.metaRepo!.setAccountId(this.account.id);
+      }
+
+      this.currentJobId = null;
+      this.isCancelled = false;
+      this.currentProgress = this.createEmptyProgress();
+      this.setPhase('idle');
+      this.emitLog(
+        'info',
+        'Sync database cleared successfully. Next sync will re-index all cloud files.',
+      );
+
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.emitLog('error', `Failed to clear database: ${msg}`);
+      return { success: false, error: msg };
+    }
+  }
+
   public getState(): SyncState {
     return {
       phase: this.currentPhase,
       isRunning: this.isRunning,
       isPaused: this.isPaused,
+      isCancelled: this.isCancelled,
       isWaitingMassMove: this.isWaitingMassMove,
       pendingMovesCount: this.pendingMovesCount,
-      error: null
+      error: null,
+      jobId: this.currentJobId,
     };
   }
 
@@ -125,7 +197,7 @@ export class SyncEngine {
     return {
       itemsRepo: this.itemsRepo!,
       restoredLogRepo: this.restoredLogRepo!,
-      syncRunsRepo: this.syncRunsRepo!
+      syncRunsRepo: this.syncRunsRepo!,
     };
   }
 
@@ -134,26 +206,30 @@ export class SyncEngine {
     this.listeners.onLog({
       timestamp: Date.now(),
       level,
-      message
+      message,
     });
   }
 
   private setPhase(phase: SyncPhase, error: string | null = null): void {
     this.currentPhase = phase;
     this.currentProgress.phase = phase;
+    this.currentProgress.jobId = this.currentJobId;
     this.listeners.onStateChange({
       phase,
       isRunning: this.isRunning,
       isPaused: this.isPaused,
+      isCancelled: this.isCancelled,
       isWaitingMassMove: this.isWaitingMassMove,
       pendingMovesCount: this.pendingMovesCount,
-      error
+      error,
+      jobId: this.currentJobId,
     });
   }
 
   private createEmptyProgress(): SyncProgress {
     return {
       phase: 'idle',
+      jobId: this.currentJobId,
       filesDone: 0,
       totalFiles: 0,
       bytesDone: 0,
@@ -164,7 +240,7 @@ export class SyncEngine {
       downloadedCount: 0,
       upToDateCount: 0,
       restoredCount: 0,
-      failedCount: 0
+      failedCount: 0,
     };
   }
 
@@ -207,7 +283,9 @@ export class SyncEngine {
     }
   }
 
-  public async startSync(options: { force?: boolean } = {}): Promise<{ success: boolean; error?: string }> {
+  public async startSync(
+    options: { force?: boolean } = {},
+  ): Promise<{ success: boolean; error?: string }> {
     if (this.isRunning) {
       return { success: false, error: 'Sync is already running' };
     }
@@ -222,6 +300,7 @@ export class SyncEngine {
 
     this.isRunning = true;
     this.isPaused = false;
+    this.isCancelled = false;
     this.abortController = new AbortController();
     this.currentProgress = this.createEmptyProgress();
     this.startPowerBlocker();
@@ -241,7 +320,7 @@ export class SyncEngine {
         throw new SyncError({
           code: 'DRIVE_DISCONNECTED',
           message: 'External drive is not mounted at the selected destination.',
-          retriable: false
+          retriable: false,
         });
       }
       this.listeners.onDriveStatus({ connected: true, path: this.baseFolder });
@@ -250,12 +329,16 @@ export class SyncEngine {
         throw new SyncError({
           code: 'PERMISSION_DENIED',
           message: 'Destination folder is not writable (read-only volume or permission issue).',
-          retriable: false
+          retriable: false,
         });
       }
 
       this.ensureDatabase();
       runId = this.syncRunsRepo!.startRun();
+      this.currentJobId = `Job #${runId}`;
+      this.currentProgress.jobId = this.currentJobId;
+      this.emitLog('info', `Started ${this.currentJobId}`);
+      this.listeners.onProgress(this.currentProgress);
 
       // Check account guard
       const existingAccount = this.metaRepo!.getAccountId();
@@ -265,14 +348,17 @@ export class SyncEngine {
         throw new SyncError({
           code: 'FORBIDDEN',
           message: `Drive belongs to different OneDrive account (${existingAccount}). Aborting.`,
-          retriable: false
+          retriable: false,
         });
       }
 
       // Check free space (warning)
       const freeSpace = getAvailableSpace(this.baseFolder);
       if (freeSpace < 500 * 1024 * 1024) {
-        this.emitLog('warn', `Low disk space on external volume: only ${Math.round(freeSpace / 1048576)} MB available.`);
+        this.emitLog(
+          'warn',
+          `Low disk space on external volume: only ${Math.round(freeSpace / 1048576)} MB available.`,
+        );
       }
 
       // Clean stale .part files (> 7 days)
@@ -286,7 +372,10 @@ export class SyncEngine {
       // STAGE 2: DISCOVER
       // ==========================================
       this.setPhase('scanning');
-      this.emitLog('info', 'Stage 2: Scanning OneDrive changes');
+      this.emitLog(
+        'info',
+        `Stage 2: Scanning OneDrive changes${this.sourceFolder ? ` in ${this.sourceFolder}` : ''}`,
+      );
 
       const lastDeltaLink = this.metaRepo!.getDeltaLink();
       let totalDiscovered = 0;
@@ -298,7 +387,8 @@ export class SyncEngine {
           this.emitLog('info', `Discovered ${totalDiscovered} cloud items...`);
         },
         this.abortController.signal,
-        () => this.checkPauseAndCancel()
+        () => this.checkPauseAndCancel(),
+        this.sourceFolder,
       );
 
       // Empty-listing guard
@@ -306,8 +396,9 @@ export class SyncEngine {
       if (totalDiscovered === 0 && currentTrackedCount > 0 && deltaResult.isFullListing) {
         throw new SyncError({
           code: 'UNKNOWN',
-          message: 'OneDrive returned no files — protective guard stopped sync to prevent touching local files.',
-          retriable: false
+          message:
+            'OneDrive returned no files — protective guard stopped sync to prevent touching local files.',
+          retriable: false,
         });
       }
 
@@ -324,10 +415,20 @@ export class SyncEngine {
       this.emitLog('info', 'Stage 3: Planning synchronization');
 
       const allDbItems = this.itemsRepo!.getAllItems();
-      const itemMap = new Map(allDbItems.map((i) => [i.id, { id: i.id, name: i.name, parentId: i.parent_id, isFolder: Boolean(i.is_folder) }]));
+      const itemMap = new Map(
+        allDbItems.map((i) => [
+          i.id,
+          { id: i.id, name: i.name, parentId: i.parent_id, isFolder: Boolean(i.is_folder) },
+        ]),
+      );
       const pathMap = resolveItemPaths(
-        allDbItems.map((i) => ({ id: i.id, name: i.name, parentId: i.parent_id, isFolder: Boolean(i.is_folder) })),
-        itemMap
+        allDbItems.map((i) => ({
+          id: i.id,
+          name: i.name,
+          parentId: i.parent_id,
+          isFolder: Boolean(i.is_folder),
+        })),
+        itemMap,
       );
 
       // Collect desired paths for all files
@@ -355,19 +456,22 @@ export class SyncEngine {
       const actions = planSync(allDbItems, pathMap, localSnapshot, {
         force: options.force,
         fsType,
-        now: Date.now()
+        now: Date.now(),
       });
 
       // Mass-move guard check
       const plannedConflictMoves = actions.filter(
-        (a) => a.type === 'CONFLICT_MOVE_THEN_DOWNLOAD'
+        (a) => a.type === 'CONFLICT_MOVE_THEN_DOWNLOAD',
       ).length;
 
       const totalFilesTracked = allDbItems.filter((i) => !i.is_folder).length;
       const massMoveLimit = Math.max(20, Math.floor(config.massMoveThreshold * totalFilesTracked));
 
       if (plannedConflictMoves > massMoveLimit) {
-        this.emitLog('warn', `Mass-move guard triggered: ${plannedConflictMoves} files scheduled to move to restored/`);
+        this.emitLog(
+          'warn',
+          `Mass-move guard triggered: ${plannedConflictMoves} files scheduled to move to restored/`,
+        );
         this.isWaitingMassMove = true;
         this.pendingMovesCount = plannedConflictMoves;
         this.setPhase('paused');
@@ -412,10 +516,10 @@ export class SyncEngine {
             downloadedCount: p.downloadedCount,
             upToDateCount: p.upToDateCount,
             restoredCount: p.restoredCount,
-            failedCount: p.failedCount
+            failedCount: p.failedCount,
           };
           this.listeners.onProgress(this.currentProgress);
-        }
+        },
       });
 
       await this.checkPauseAndCancel();
@@ -448,7 +552,7 @@ export class SyncEngine {
         gatingAllowed: cleanDiscoveryCompleted && !this.abortController.signal.aborted,
         onFileRestored: (orig, rest) => {
           this.emitLog('info', `Moved ${orig} -> restored/${rest}`);
-        }
+        },
       });
 
       // ==========================================
@@ -468,12 +572,12 @@ export class SyncEngine {
         skipped: execResult.skipped,
         restored: finalRestored,
         failed: execResult.failed,
-        bytes: execResult.bytes
+        bytes: execResult.bytes,
       });
 
       this.emitLog(
         'info',
-        `Sync completed: ${execResult.downloaded} downloaded, ${execResult.skipped} up to date, ${finalRestored} restored, ${execResult.failed} failed.`
+        `Sync completed: ${execResult.downloaded} downloaded, ${execResult.skipped} up to date, ${finalRestored} restored, ${execResult.failed} failed.`,
       );
 
       this.currentProgress.restoredCount = finalRestored;
@@ -487,15 +591,16 @@ export class SyncEngine {
           (err.name === 'AbortError' || err.message.toLowerCase().includes('cancelled')));
 
       if (isCancelled) {
-        this.emitLog('info', 'Sync cancelled by user.');
+        this.isCancelled = true;
+        this.emitLog('info', `${this.currentJobId || 'Sync'} was cancelled by user.`);
         if (runId && this.syncRunsRepo) {
           this.syncRunsRepo.finishRun(runId, {
-            status: 'failed',
+            status: 'cancelled',
             downloaded: this.currentProgress.downloadedCount,
             skipped: this.currentProgress.upToDateCount,
             restored: this.currentProgress.restoredCount,
             failed: this.currentProgress.failedCount,
-            bytes: this.currentProgress.bytesDone
+            bytes: this.currentProgress.bytesDone,
           });
         }
         this.setPhase('idle');
@@ -512,7 +617,7 @@ export class SyncEngine {
           skipped: this.currentProgress.upToDateCount,
           restored: this.currentProgress.restoredCount,
           failed: this.currentProgress.failedCount,
-          bytes: this.currentProgress.bytesDone
+          bytes: this.currentProgress.bytesDone,
         });
       }
 
@@ -550,8 +655,9 @@ export class SyncEngine {
   public cancelSync(): void {
     if (this.isRunning) {
       this.isPaused = false;
+      this.isCancelled = true;
       this.abortController?.abort();
-      this.emitLog('info', 'Cancelling active sync run...');
+      this.emitLog('info', `Cancelling ${this.currentJobId || 'active sync run'}...`);
       if (this.pendingMassMoveResolve) {
         this.pendingMassMoveResolve(false);
       }

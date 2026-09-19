@@ -58,10 +58,26 @@ OneSync provides a bulletproof, **one-way mirror** of OneDrive onto an external 
 - **I want to** observe real-time sync progress, download speeds, and active file transfers,
 - **So that** I can track synchronization and control execution.
 - **Acceptance Criteria:**
-  - Displays phase indicator, files completed/total, bytes completed/total, transfer speed, and ETA.
+  - Displays unique Job ID (e.g., `Job #1`, `Job #2`), phase indicator, files completed/total, bytes completed/total, transfer speed, and ETA.
   - Shows up to 8 concurrently active downloads with individual progress bars.
-  - Action buttons: "Sync now", "Pause", "Resume", and "Cancel".
-  - Dedicated tabs for Activity logs, Failed items, Restored files, and Run history.
+  - Action buttons: "Sync now", "Pause", "Resume", "Cancel", and "↻ Restart Sync" when cancelled.
+  - Dedicated tabs for Activity logs, Failed items, Restored files, and Run history (with Job IDs and cancelled run status).
+
+### US-4: Select OneDrive Source Folder
+- **As a** user,
+- **I want to** mirror either my entire OneDrive or choose a single specific directory (e.g., `/Documents`),
+- **So that** I only download what I need without synchronizing unwanted cloud folders.
+- **Acceptance Criteria:**
+  - Can browse and select root OneDrive folders or input a custom directory path.
+  - Switching source resets the delta link and accurately restricts the sync mirror to the chosen directory.
+
+### US-5: Clear Database & Reset Index
+- **As a** user,
+- **I want to** clear my local sync database (`state.db`),
+- **So that** I can start a fresh index scan from scratch without deleting existing files on disk.
+- **Acceptance Criteria:**
+  - Available in Settings menu (`⚙`).
+  - Confirms action with user, closes and recreates fresh `state.db`, and resets pending sync state.
 
 ---
 

@@ -12,8 +12,7 @@ export function applyMigrations(db: Database.Database): void {
   `);
 
   const versionRow = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as
-    | { value: string }
-    | undefined;
+    { value: string } | undefined;
 
   const currentVersion = versionRow ? parseInt(versionRow.value, 10) : 0;
 

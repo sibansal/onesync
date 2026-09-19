@@ -48,7 +48,10 @@ export class AppDatabase {
     try {
       sqliteInstance = createAndVerifyDb();
     } catch (err) {
-      logger.warn('state.db corrupted or failed integrity check. Moving aside and creating fresh state:', err);
+      logger.warn(
+        'state.db corrupted or failed integrity check. Moving aside and creating fresh state:',
+        err,
+      );
       try {
         if (existsSync(this.dbPath)) {
           const corruptPath = join(onesyncDir, `state.db.corrupt-${Date.now()}`);

@@ -58,7 +58,7 @@ describe('Database and Repositories', () => {
         size: 1024,
         fingerprint: 'fp_abc',
         hashType: 'sha256',
-        remoteModified: '2026-09-19T00:00:00Z'
+        remoteModified: '2026-09-19T00:00:00Z',
       },
       {
         id: 'item2',
@@ -68,8 +68,8 @@ describe('Database and Repositories', () => {
         size: 0,
         fingerprint: null,
         hashType: null,
-        remoteModified: '2026-09-19T00:00:00Z'
-      }
+        remoteModified: '2026-09-19T00:00:00Z',
+      },
     ]);
 
     expect(itemsRepo.getCount()).toBe(1); // 1 file
@@ -82,7 +82,7 @@ describe('Database and Repositories', () => {
       localSize: 1024,
       localMtimeMs: 1700000000000,
       syncedFingerprint: 'fp_abc',
-      syncedAt: Date.now()
+      syncedAt: Date.now(),
     });
 
     const updated = itemsRepo.getItem('item1');
@@ -109,7 +109,7 @@ describe('Database and Repositories', () => {
       skipped: 10,
       restored: 1,
       failed: 0,
-      bytes: 50000
+      bytes: 50000,
     });
 
     const history = syncRunsRepo.getHistory(5);

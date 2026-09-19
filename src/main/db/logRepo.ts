@@ -12,13 +12,15 @@ export class RestoredLogRepo {
     originalPath: string,
     restoredPath: string,
     reason: 'not_on_onedrive' | 'local_modified' | 'untracked_conflict' | 'type_conflict',
-    movedAt = Date.now()
+    movedAt = Date.now(),
   ): void {
     this.db
-      .prepare(`
+      .prepare(
+        `
         INSERT INTO restored_log (original_path, restored_path, reason, moved_at)
         VALUES (?, ?, ?, ?)
-      `)
+      `,
+      )
       .run(originalPath, restoredPath, reason, movedAt);
   }
 
@@ -38,7 +40,7 @@ export class RestoredLogRepo {
       originalPath: r.original_path,
       restoredPath: r.restored_path,
       reason: r.reason,
-      movedAt: r.moved_at
+      movedAt: r.moved_at,
     }));
   }
 }
@@ -52,10 +54,12 @@ export class SyncRunsRepo {
 
   public startRun(): number {
     const result = this.db
-      .prepare(`
+      .prepare(
+        `
         INSERT INTO sync_runs (started_at, status)
         VALUES (?, 'running')
-      `)
+      `,
+      )
       .run(Date.now());
     return Number(result.lastInsertRowid);
   }
@@ -69,10 +73,11 @@ export class SyncRunsRepo {
       restored: number;
       failed: number;
       bytes: number;
-    }
+    },
   ): void {
     this.db
-      .prepare(`
+      .prepare(
+        `
         UPDATE sync_runs SET
           finished_at = @finishedAt,
           status = @status,
@@ -82,7 +87,8 @@ export class SyncRunsRepo {
           failed = @failed,
           bytes = @bytes
         WHERE id = @id
-      `)
+      `,
+      )
       .run({
         id,
         finishedAt: Date.now(),
@@ -91,7 +97,7 @@ export class SyncRunsRepo {
         skipped: stats.skipped,
         restored: stats.restored,
         failed: stats.failed,
-        bytes: stats.bytes
+        bytes: stats.bytes,
       });
   }
 
@@ -119,7 +125,7 @@ export class SyncRunsRepo {
       skipped: r.skipped,
       restored: r.restored,
       failed: r.failed,
-      bytes: r.bytes
+      bytes: r.bytes,
     }));
   }
 }

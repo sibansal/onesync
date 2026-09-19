@@ -34,7 +34,7 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v === 'true'),
   MAIN_VITE_CUSTOM_ICON_PATH: z.string().optional(),
-  MAIN_VITE_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info')
+  MAIN_VITE_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
 function parseAndValidateConfig() {
@@ -55,12 +55,12 @@ function parseAndValidateConfig() {
   if (isProd) {
     if (data.MAIN_VITE_USE_MOCK_DRIVE) {
       throw new Error(
-        '[OneSync Config Error] MAIN_VITE_USE_MOCK_DRIVE must be false in production mode.'
+        '[OneSync Config Error] MAIN_VITE_USE_MOCK_DRIVE must be false in production mode.',
       );
     }
     if (data.MAIN_VITE_ALLOW_INTERNAL_DESTINATION) {
       throw new Error(
-        '[OneSync Config Error] MAIN_VITE_ALLOW_INTERNAL_DESTINATION must be false in production mode.'
+        '[OneSync Config Error] MAIN_VITE_ALLOW_INTERNAL_DESTINATION must be false in production mode.',
       );
     }
   }
@@ -79,7 +79,7 @@ function parseAndValidateConfig() {
     allowInternalDestination: data.MAIN_VITE_ALLOW_INTERNAL_DESTINATION,
     customIconPath: data.MAIN_VITE_CUSTOM_ICON_PATH,
     logLevel: data.MAIN_VITE_LOG_LEVEL,
-    userAgent: 'ISV|sibansal.dev|OneSync/1.0.0'
+    userAgent: 'ISV|sibansal.dev|OneSync/1.0.0',
   });
 }
 

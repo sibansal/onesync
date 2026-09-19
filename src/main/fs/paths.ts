@@ -71,7 +71,7 @@ export interface PathItemReference {
  */
 export function computeRelativePath(
   item: PathItemReference,
-  itemMap: Map<string, PathItemReference>
+  itemMap: Map<string, PathItemReference>,
 ): string {
   const segments: string[] = [sanitizeSegment(item.name)];
   let currentParentId = item.parentId;
@@ -105,7 +105,7 @@ export function computeRelativePath(
  */
 export function resolveItemPaths(
   items: PathItemReference[],
-  itemMap: Map<string, PathItemReference>
+  itemMap: Map<string, PathItemReference>,
 ): Map<string, string> {
   const resolvedPaths = new Map<string, string>();
   const usedPaths = new Set<string>();

@@ -22,7 +22,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        animation: 'fadeIn 0.15s ease-out'
+        animation: 'fadeIn 0.15s ease-out',
       }}
     >
       <div
@@ -38,7 +38,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          position: 'relative'
+          position: 'relative',
         }}
       >
         <button
@@ -53,7 +53,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
             fontSize: '1.2rem',
             cursor: 'pointer',
             padding: '4px 8px',
-            borderRadius: 'var(--radius-sm)'
+            borderRadius: 'var(--radius-sm)',
           }}
           title="Close"
         >
@@ -68,11 +68,13 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
             height: '72px',
             objectFit: 'contain',
             marginBottom: '1rem',
-            filter: 'drop-shadow(0 4px 12px rgba(0, 120, 212, 0.25))'
+            filter: 'drop-shadow(0 4px 12px rgba(0, 120, 212, 0.25))',
           }}
         />
 
-        <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+        <h2
+          style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}
+        >
           OneSync
         </h2>
         <span
@@ -83,7 +85,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
             fontWeight: 500,
             background: 'rgba(0, 120, 212, 0.1)',
             padding: '2px 8px',
-            borderRadius: '999px'
+            borderRadius: '999px',
           }}
         >
           Version 1.0.0 (Apple Silicon)
@@ -94,7 +96,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
             fontSize: '0.85rem',
             color: 'var(--text-secondary)',
             margin: '1.25rem 0 1rem 0',
-            lineHeight: 1.45
+            lineHeight: 1.45,
           }}
         >
           High-performance, reliable one-way mirror from OneDrive to external storage drives.
@@ -105,11 +107,19 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
             width: '100%',
             height: '1px',
             background: 'var(--border-subtle)',
-            margin: '0.5rem 0 1rem 0'
+            margin: '0.5rem 0 1rem 0',
           }}
         />
 
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+        <div
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.35rem',
+          }}
+        >
           <div>
             Created by{' '}
             <a
@@ -121,7 +131,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
               style={{
                 color: 'var(--accent-blue)',
                 fontWeight: 600,
-                textDecoration: 'none'
+                textDecoration: 'none',
               }}
             >
               sibansal.dev
@@ -141,7 +151,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps): React.JSX.Elem
             borderRadius: 'var(--radius-md)',
             fontWeight: 600,
             fontSize: '0.85rem',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           Done

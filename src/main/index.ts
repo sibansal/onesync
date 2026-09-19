@@ -37,7 +37,7 @@ export function resolveAppIcon(): string | undefined {
     join(process.resourcesPath, 'icon.png'),
     join(process.resourcesPath, 'build/icon.icns'),
     join(process.resourcesPath, 'icon.icns'),
-    join(app.getAppPath(), 'build/icon.png')
+    join(app.getAppPath(), 'build/icon.png'),
   ];
   for (const p of possiblePaths) {
     if (existsSync(p)) {
@@ -64,7 +64,7 @@ function createApplicationMenu(): void {
                     mainWindow.focus();
                     mainWindow.webContents.send('app:openAbout');
                   }
-                }
+                },
               },
               { type: 'separator' as const },
               { role: 'services' as const },
@@ -73,14 +73,14 @@ function createApplicationMenu(): void {
               { role: 'hideOthers' as const },
               { role: 'unhide' as const },
               { type: 'separator' as const },
-              { role: 'quit' as const, label: 'Quit OneSync' }
-            ]
-          }
+              { role: 'quit' as const, label: 'Quit OneSync' },
+            ],
+          },
         ]
       : []),
     {
       label: 'File',
-      submenu: [isMac ? { role: 'close' as const } : { role: 'quit' as const }]
+      submenu: [isMac ? { role: 'close' as const } : { role: 'quit' as const }],
     },
     {
       label: 'Edit',
@@ -91,8 +91,8 @@ function createApplicationMenu(): void {
         { role: 'cut' as const },
         { role: 'copy' as const },
         { role: 'paste' as const },
-        { role: 'selectAll' as const }
-      ]
+        { role: 'selectAll' as const },
+      ],
     },
     {
       label: 'View',
@@ -105,8 +105,8 @@ function createApplicationMenu(): void {
         { role: 'zoomIn' as const },
         { role: 'zoomOut' as const },
         { type: 'separator' as const },
-        { role: 'togglefullscreen' as const }
-      ]
+        { role: 'togglefullscreen' as const },
+      ],
     },
     {
       label: 'Window',
@@ -118,10 +118,10 @@ function createApplicationMenu(): void {
               { type: 'separator' as const },
               { role: 'front' as const },
               { type: 'separator' as const },
-              { role: 'window' as const }
+              { role: 'window' as const },
             ]
-          : [{ role: 'close' as const }])
-      ]
+          : [{ role: 'close' as const }]),
+      ],
     },
     {
       role: 'help' as const,
@@ -130,7 +130,7 @@ function createApplicationMenu(): void {
           label: 'OneSync Website',
           click: async () => {
             await shell.openExternal('https://sibansal.dev/');
-          }
+          },
         },
         {
           label: 'About OneSync',
@@ -140,10 +140,10 @@ function createApplicationMenu(): void {
               mainWindow.focus();
               mainWindow.webContents.send('app:openAbout');
             }
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   const menu = Menu.buildFromTemplate(template);
@@ -168,8 +168,8 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
       contextIsolation: true,
-      nodeIntegration: false
-    }
+      nodeIntegration: false,
+    },
   });
 
   const { syncEngine, authService } = setupIpcHandlers(mainWindow);
@@ -188,7 +188,8 @@ function createWindow(): void {
         defaultId: 0,
         cancelId: 0,
         title: 'Sync in Progress',
-        message: 'A sync is currently in progress. Quitting now will cleanly pause downloads. Are you sure you want to quit?'
+        message:
+          'A sync is currently in progress. Quitting now will cleanly pause downloads. Are you sure you want to quit?',
       });
 
       if (choice === 0) {
@@ -259,10 +260,11 @@ if (!gotTheLock) {
         applicationVersion: '1.0.0',
         version: '1.0.0',
         copyright: 'Copyright © sibansal.dev',
-        credits: 'Built with ❤️ by sibansal.dev (https://sibansal.dev/)\nA high-performance macOS mirror for OneDrive.',
+        credits:
+          'Built with ❤️ by sibansal.dev (https://sibansal.dev/)\nA high-performance macOS mirror for OneDrive.',
         authors: ['sibansal.dev'],
         website: 'https://sibansal.dev/',
-        iconPath: iconPath
+        iconPath: iconPath,
       });
     }
 

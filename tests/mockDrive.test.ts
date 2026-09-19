@@ -32,9 +32,9 @@ describe('MockDrive', () => {
         size: 10,
         fingerprint: 'dummy',
         hashType: 'sha256',
-        remoteModified: null
+        remoteModified: null,
       },
-      5
+      5,
     );
 
     expect(resumed).toBe(true);

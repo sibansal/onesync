@@ -31,9 +31,10 @@ export class MockDrive implements RemoteDrive {
   public simulateFailure(
     type: '429' | '401' | 'network' | '403' | 'expired_url',
     retryAfter?: number,
-    target?: 'list' | 'download'
+    target?: 'list' | 'download',
   ): void {
-    const effectiveTarget = target ?? (type === '403' || type === 'expired_url' ? 'download' : undefined);
+    const effectiveTarget =
+      target ?? (type === '403' || type === 'expired_url' ? 'download' : undefined);
     this.failureQueue.push({ type, retryAfter, target: effectiveTarget });
   }
 
@@ -47,9 +48,9 @@ export class MockDrive implements RemoteDrive {
         size: 0,
         fingerprint: null,
         hashType: null,
-        remoteModified: new Date().toISOString()
+        remoteModified: new Date().toISOString(),
       },
-      content: Buffer.alloc(0)
+      content: Buffer.alloc(0),
     });
     this.currentDeltaVersion++;
   }
@@ -59,7 +60,7 @@ export class MockDrive implements RemoteDrive {
     parentId: string | null,
     name: string,
     content: Buffer | string,
-    options?: { modified?: string; hashType?: 'sha256' | 'sha1' | 'quickXor' }
+    options?: { modified?: string; hashType?: 'sha256' | 'sha1' | 'quickXor' },
   ): void {
     const buf = typeof content === 'string' ? Buffer.from(content, 'utf-8') : content;
     const hashType = options?.hashType ?? 'sha256';
@@ -82,9 +83,9 @@ export class MockDrive implements RemoteDrive {
         size: buf.length,
         fingerprint: hashVal,
         hashType,
-        remoteModified: options?.modified ?? new Date().toISOString()
+        remoteModified: options?.modified ?? new Date().toISOString(),
       },
-      content: buf
+      content: buf,
     });
     this.currentDeltaVersion++;
   }
@@ -130,7 +131,7 @@ export class MockDrive implements RemoteDrive {
     return {
       id: 'mock_user_account_id',
       name: 'Mock User',
-      email: 'mock.user@example.com'
+      email: 'mock.user@example.com',
     };
   }
 
@@ -143,21 +144,38 @@ export class MockDrive implements RemoteDrive {
     }
     return {
       used: totalUsed,
-      total: 100 * 1024 * 1024 * 1024 // 100 GB
+      total: 100 * 1024 * 1024 * 1024, // 100 GB
     };
+  }
+
+  public async listRootFolders(): Promise<Array<{ id: string; name: string; path: string }>> {
+    const folders: Array<{ id: string; name: string; path: string }> = [];
+    for (const entry of this.items.values()) {
+      if (entry.item.isFolder && !entry.item.isDeleted && entry.item.id !== 'root') {
+        if (entry.item.parentId === 'root' || entry.item.parentId === null) {
+          folders.push({
+            id: entry.item.id,
+            name: entry.item.name,
+            path: `/${entry.item.name}`,
+          });
+        }
+      }
+    }
+    return folders;
   }
 
   public async listChanges(
     deltaLink: string | null,
     onPage: (items: RemoteItem[]) => void,
     signal?: AbortSignal,
-    checkPause?: () => Promise<void>
+    checkPause?: () => Promise<void>,
+    sourceFolder?: string | null,
   ): Promise<{ deltaLink: string; isFullListing: boolean }> {
     if (signal?.aborted) {
       throw new SyncError({
         code: 'CANCELLED',
         message: 'Sync was cancelled by user',
-        retriable: false
+        retriable: false,
       });
     }
 
@@ -167,7 +185,7 @@ export class MockDrive implements RemoteDrive {
 
     // Check failure queue for list-targeted failures
     const listFailureIdx = this.failureQueue.findIndex(
-      (f) => f.target === 'list' || (!f.target && f.type !== '403' && f.type !== 'expired_url')
+      (f) => f.target === 'list' || (!f.target && f.type !== '403' && f.type !== 'expired_url'),
     );
     if (listFailureIdx !== -1) {
       const [failure] = this.failureQueue.splice(listFailureIdx, 1);
@@ -177,44 +195,67 @@ export class MockDrive implements RemoteDrive {
             code: 'THROTTLED',
             message: 'Mock Rate limited (HTTP 429)',
             retriable: true,
-            retryAfterMs: (failure.retryAfter ?? 1) * 1000
+            retryAfterMs: (failure.retryAfter ?? 1) * 1000,
           });
         }
         if (failure.type === 'network') {
           throw new SyncError({
             code: 'NETWORK',
             message: 'Mock Network connection lost',
-            retriable: true
+            retriable: true,
           });
         }
         if (failure.type === '401') {
           throw new SyncError({
             code: 'AUTH_EXPIRED',
             message: 'Mock Auth token expired',
-            retriable: true
+            retriable: true,
           });
         }
       }
     }
 
-    const allItems = Array.from(this.items.values()).map((v) => ({ ...v.item }));
+    let allItems = Array.from(this.items.values()).map((v) => ({ ...v.item }));
+
+    if (sourceFolder) {
+      const cleaned = sourceFolder.replace(/^\/+|\/+$/g, '');
+      if (cleaned) {
+        // Find target folder item
+        const folderItem = allItems.find(
+          (i) => i.isFolder && (i.name === cleaned || i.id === cleaned),
+        );
+        if (folderItem) {
+          const includedIds = new Set<string>([folderItem.id]);
+          let added = true;
+          while (added) {
+            added = false;
+            for (const item of allItems) {
+              if (item.parentId && includedIds.has(item.parentId) && !includedIds.has(item.id)) {
+                includedIds.add(item.id);
+                added = true;
+              }
+            }
+          }
+          allItems = allItems.filter((i) => includedIds.has(i.id));
+        }
+      }
+    }
+
     onPage(allItems);
 
     return {
       deltaLink: `mock_delta_v${this.currentDeltaVersion}`,
-      isFullListing: !deltaLink
+      isFullListing: !deltaLink,
     };
   }
 
   public async openDownload(
     item: RemoteItem,
     startByte = 0,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<{ stream: Readable; resumed: boolean; freshDownloadUrl?: string }> {
     // Check failure queue for download-targeted failures
-    const dlFailureIdx = this.failureQueue.findIndex(
-      (f) => f.target === 'download' || !f.target
-    );
+    const dlFailureIdx = this.failureQueue.findIndex((f) => f.target === 'download' || !f.target);
     if (dlFailureIdx !== -1) {
       const [failure] = this.failureQueue.splice(dlFailureIdx, 1);
       if (failure) {
@@ -223,28 +264,28 @@ export class MockDrive implements RemoteDrive {
             code: 'THROTTLED',
             message: 'Mock throttled download',
             retriable: true,
-            retryAfterMs: (failure.retryAfter ?? 1) * 1000
+            retryAfterMs: (failure.retryAfter ?? 1) * 1000,
           });
         }
         if (failure.type === 'expired_url') {
           throw new SyncError({
             code: 'DOWNLOAD_URL_EXPIRED',
             message: 'Mock download URL expired',
-            retriable: true
+            retriable: true,
           });
         }
         if (failure.type === '403') {
           throw new SyncError({
             code: 'FORBIDDEN',
             message: 'Mock download 403 Forbidden',
-            retriable: false
+            retriable: false,
           });
         }
         if (failure.type === 'network') {
           throw new SyncError({
             code: 'NETWORK',
             message: 'Mock network interruption during download',
-            retriable: true
+            retriable: true,
           });
         }
       }
@@ -255,7 +296,7 @@ export class MockDrive implements RemoteDrive {
       throw new SyncError({
         code: 'REMOTE_NOT_FOUND',
         message: `Mock item not found: ${item.id}`,
-        retriable: false
+        retriable: false,
       });
     }
 
@@ -280,13 +321,13 @@ export class MockDrive implements RemoteDrive {
         }
         this.push(sliced);
         this.push(null);
-      }
+      },
     });
 
     return {
       stream,
       resumed,
-      freshDownloadUrl: `https://mock.onedrive.local/download/${item.id}`
+      freshDownloadUrl: `https://mock.onedrive.local/download/${item.id}`,
     };
   }
 }

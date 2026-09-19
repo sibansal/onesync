@@ -23,7 +23,7 @@ export interface LocalStatEntry {
 export async function statLocalBatch(
   baseFolder: string,
   relativePaths: string[],
-  concurrency = 32
+  concurrency = 32,
 ): Promise<Map<string, LocalStatEntry>> {
   const results = new Map<string, LocalStatEntry>();
   const onedriveRoot = join(baseFolder, 'onedrive');
@@ -41,7 +41,7 @@ export async function statLocalBatch(
           isFile: s.isFile(),
           isDirectory: s.isDirectory(),
           size: s.size,
-          mtimeMs: Math.round(s.mtimeMs)
+          mtimeMs: Math.round(s.mtimeMs),
         });
       } catch {
         results.set(relPath, {
@@ -51,11 +51,11 @@ export async function statLocalBatch(
           isFile: false,
           isDirectory: false,
           size: 0,
-          mtimeMs: 0
+          mtimeMs: 0,
         });
       }
     },
-    { concurrency }
+    { concurrency },
   );
 
   return results;
@@ -66,7 +66,7 @@ export async function statLocalBatch(
  */
 export async function computeLocalFileHash(
   fullPath: string,
-  hashType: 'sha1' | 'sha256' | 'quickXor' | null
+  hashType: 'sha1' | 'sha256' | 'quickXor' | null,
 ): Promise<string | null> {
   if (!hashType || !existsSync(fullPath)) {
     return null;
@@ -81,8 +81,8 @@ export async function computeLocalFileHash(
         write(chunk: Buffer, _encoding, callback) {
           hasher.update(chunk);
           callback();
-        }
-      })
+        },
+      }),
     );
     return hasher.digest('base64');
   }
@@ -95,8 +95,8 @@ export async function computeLocalFileHash(
       write(chunk: Buffer, _encoding, callback) {
         hash.update(chunk);
         callback();
-      }
-    })
+      },
+    }),
   );
   return hash.digest('hex');
 }

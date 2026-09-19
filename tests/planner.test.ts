@@ -23,7 +23,7 @@ function createMockDbItem(overrides: Partial<DbItem> = {}): DbItem {
     retry_count: 0,
     next_retry_at: null,
     synced_at: 1700000000000,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -36,7 +36,7 @@ function createLocalSnapshot(overrides: Partial<LocalSnapshotItem> = {}): LocalS
     isDirectory: false,
     size: 1000,
     mtimeMs: 1700000000000,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -52,28 +52,34 @@ describe('Planner - 10-Row Decision Matrix', () => {
   it('Row 2: status = failed, next_retry_at in future, not forced -> SKIP; forced -> continues', () => {
     const item = createMockDbItem({
       status: 'failed',
-      next_retry_at: 1000000
+      next_retry_at: 1000000,
     });
     const local = createLocalSnapshot({ exists: false });
 
-    const waitingAction = planSyncItem(item, 'test.pdf', local, undefined, { now: 500000, force: false });
+    const waitingAction = planSyncItem(item, 'test.pdf', local, undefined, {
+      now: 500000,
+      force: false,
+    });
     expect(waitingAction.type).toBe('SKIP');
     expect(waitingAction.reason).toBe('waiting_retry');
 
-    const forcedAction = planSyncItem(item, 'test.pdf', local, undefined, { now: 500000, force: true });
+    const forcedAction = planSyncItem(item, 'test.pdf', local, undefined, {
+      now: 500000,
+      force: true,
+    });
     expect(forcedAction.type).toBe('DOWNLOAD');
   });
 
   it('Row 3: D.local_path != P, old file exists & healthy, fingerprint unchanged -> RENAME', () => {
     const item = createMockDbItem({
-      local_path: 'OldFolder/test.pdf'
+      local_path: 'OldFolder/test.pdf',
     });
     const oldLocal = createLocalSnapshot({
       relativePath: 'OldFolder/test.pdf',
       exists: true,
       isFile: true,
       size: 1000,
-      mtimeMs: 1700000000000
+      mtimeMs: 1700000000000,
     });
     const action = planSyncItem(item, 'NewFolder/test.pdf', undefined, oldLocal);
     expect(action.type).toBe('RENAME');
@@ -108,7 +114,7 @@ describe('Planner - 10-Row Decision Matrix', () => {
     const item = createMockDbItem({ fingerprint: 'hash_abc', synced_fingerprint: 'hash_abc' });
     const local = createLocalSnapshot({
       mtimeMs: 1700050000000, // beyond 2s tolerance
-      hash: 'hash_abc'
+      hash: 'hash_abc',
     });
     const action = planSyncItem(item, 'test.pdf', local, undefined);
     expect(action.type).toBe('UPDATE_LOCAL_RECORD');
@@ -118,7 +124,7 @@ describe('Planner - 10-Row Decision Matrix', () => {
     const item = createMockDbItem({ fingerprint: 'hash_abc', synced_fingerprint: 'hash_abc' });
     const local = createLocalSnapshot({
       mtimeMs: 1700050000000,
-      hash: 'hash_different'
+      hash: 'hash_different',
     });
     const action = planSyncItem(item, 'test.pdf', local, undefined);
     expect(action.type).toBe('CONFLICT_MOVE_THEN_DOWNLOAD');
@@ -130,7 +136,7 @@ describe('Planner - 10-Row Decision Matrix', () => {
       fingerprint: 'fp_v2', // cloud modified
       synced_fingerprint: 'fp_v1',
       local_size: 1000,
-      local_mtime_ms: 1700000000000
+      local_mtime_ms: 1700000000000,
     });
     const local = createLocalSnapshot({ size: 1000, mtimeMs: 1700000000000 });
     const action = planSyncItem(item, 'test.pdf', local, undefined);
@@ -142,7 +148,7 @@ describe('Planner - 10-Row Decision Matrix', () => {
       fingerprint: 'fp_v2',
       synced_fingerprint: 'fp_v1',
       local_size: 1000,
-      local_mtime_ms: 1700000000000
+      local_mtime_ms: 1700000000000,
     });
     const local = createLocalSnapshot({ size: 1500, mtimeMs: 1700000005000 }); // user modified locally
     const action = planSyncItem(item, 'test.pdf', local, undefined);
@@ -154,7 +160,7 @@ describe('Planner - 10-Row Decision Matrix', () => {
     const item = createMockDbItem({
       status: 'pending',
       local_path: null,
-      fingerprint: 'hash_xyz'
+      fingerprint: 'hash_xyz',
     });
 
     const matchLocal = createLocalSnapshot({ hash: 'hash_xyz' });

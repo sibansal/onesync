@@ -24,7 +24,7 @@ export class GraphDrive implements RemoteDrive {
     return {
       id: data.id,
       name: data.displayName || 'OneDrive User',
-      email: data.userPrincipalName || data.mail || ''
+      email: data.userPrincipalName || data.mail || '',
     };
   }
 
@@ -37,20 +37,41 @@ export class GraphDrive implements RemoteDrive {
     const data = await response.json();
     return {
       used: data.quota?.used ?? 0,
-      total: data.quota?.total ?? 0
+      total: data.quota?.total ?? 0,
     };
+  }
+
+  public async listRootFolders(): Promise<Array<{ id: string; name: string; path: string }>> {
+    const url = `${config.graphBaseUrl}/me/drive/root/children?$select=id,name,folder`;
+    const response = await graphFetch(url, {}, this.authService);
+    if (!response.ok) {
+      throw new Error(`Graph folder listing failed: HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    const rawItems = Array.isArray(data.value) ? data.value : [];
+    return rawItems
+      .filter((item: { folder?: unknown }) => Boolean(item.folder))
+      .map((item: { id: string; name: string }) => ({
+        id: item.id,
+        name: item.name,
+        path: `/${item.name}`,
+      }));
   }
 
   public async listChanges(
     deltaLink: string | null,
     onPage: (items: RemoteItem[]) => void,
     signal?: AbortSignal,
-    checkPause?: () => Promise<void>
+    checkPause?: () => Promise<void>,
+    sourceFolder?: string | null,
   ): Promise<{ deltaLink: string; isFullListing: boolean }> {
     let isFullListing = !deltaLink;
-    const initialUrl =
-      deltaLink ??
-      `${config.graphBaseUrl}/me/drive/root/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`;
+    const cleanedPath = sourceFolder ? sourceFolder.replace(/^\/+|\/+$/g, '') : '';
+    const baseDeltaUrl = cleanedPath
+      ? `${config.graphBaseUrl}/me/drive/root:/${encodeURI(cleanedPath)}:/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`
+      : `${config.graphBaseUrl}/me/drive/root/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`;
+
+    const initialUrl = deltaLink ?? baseDeltaUrl;
 
     let nextUrl: string | null = initialUrl;
     let finalDeltaLink = '';
@@ -60,7 +81,7 @@ export class GraphDrive implements RemoteDrive {
         throw new SyncError({
           code: 'CANCELLED',
           message: 'Sync was cancelled by user',
-          retriable: false
+          retriable: false,
         });
       }
 
@@ -72,7 +93,7 @@ export class GraphDrive implements RemoteDrive {
         throw new SyncError({
           code: 'CANCELLED',
           message: 'Sync was cancelled by user',
-          retriable: false
+          retriable: false,
         });
       }
 
@@ -82,7 +103,7 @@ export class GraphDrive implements RemoteDrive {
       if (response.status === 410) {
         logger.warn('Delta link expired (HTTP 410 Gone). Performing full enumeration.');
         isFullListing = true;
-        nextUrl = `${config.graphBaseUrl}/me/drive/root/delta?$select=id,name,size,file,folder,parentReference,deleted,lastModifiedDateTime,eTag,cTag,package,remoteItem,root`;
+        nextUrl = baseDeltaUrl;
         continue;
       }
 
@@ -117,7 +138,7 @@ export class GraphDrive implements RemoteDrive {
           fingerprint,
           hashType,
           remoteModified: raw.lastModifiedDateTime ?? null,
-          isDeleted: Boolean(raw.deleted)
+          isDeleted: Boolean(raw.deleted),
         });
       }
 
@@ -135,14 +156,14 @@ export class GraphDrive implements RemoteDrive {
 
     return {
       deltaLink: finalDeltaLink,
-      isFullListing
+      isFullListing,
     };
   }
 
   public async openDownload(
     item: RemoteItem,
     startByte = 0,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<{ stream: Readable; resumed: boolean; freshDownloadUrl?: string }> {
     // 1. Fetch fresh download URL
     const itemUrl = `${config.graphBaseUrl}/me/drive/items/${item.id}?$select=id,@microsoft.graph.downloadUrl`;
@@ -152,7 +173,7 @@ export class GraphDrive implements RemoteDrive {
       throw new SyncError({
         code: 'REMOTE_NOT_FOUND',
         message: `Item ${item.name} vanished on remote OneDrive`,
-        retriable: false
+        retriable: false,
       });
     }
 
@@ -160,7 +181,7 @@ export class GraphDrive implements RemoteDrive {
       throw new SyncError({
         code: 'FORBIDDEN',
         message: `Permission denied downloading item ${item.name}`,
-        retriable: false
+        retriable: false,
       });
     }
 
@@ -168,7 +189,7 @@ export class GraphDrive implements RemoteDrive {
       throw new SyncError({
         code: 'SERVER_5XX',
         message: `Failed to fetch download URL: HTTP ${itemMetaResponse.status}`,
-        retriable: true
+        retriable: true,
       });
     }
 
@@ -188,9 +209,9 @@ export class GraphDrive implements RemoteDrive {
         {
           headers: downloadHeaders,
           skipAuth: true,
-          signal
+          signal,
         },
-        this.authService
+        this.authService,
       );
     } else {
       // Fallback with auth token
@@ -198,9 +219,9 @@ export class GraphDrive implements RemoteDrive {
         `${config.graphBaseUrl}/me/drive/items/${item.id}/content`,
         {
           headers: downloadHeaders,
-          signal
+          signal,
         },
-        this.authService
+        this.authService,
       );
     }
 
@@ -208,7 +229,7 @@ export class GraphDrive implements RemoteDrive {
       throw new SyncError({
         code: 'DOWNLOAD_URL_EXPIRED',
         message: 'Download URL expired or invalid',
-        retriable: true
+        retriable: true,
       });
     }
 
@@ -216,7 +237,7 @@ export class GraphDrive implements RemoteDrive {
       throw new SyncError({
         code: 'SERVER_5XX',
         message: `Download failed with HTTP ${downloadResponse.status}`,
-        retriable: true
+        retriable: true,
       });
     }
 
@@ -226,13 +247,13 @@ export class GraphDrive implements RemoteDrive {
     }
 
     const nodeStream = Readable.fromWeb(
-      downloadResponse.body as import('stream/web').ReadableStream
+      downloadResponse.body as import('stream/web').ReadableStream,
     );
 
     return {
       stream: nodeStream,
       resumed,
-      freshDownloadUrl: downloadUrl
+      freshDownloadUrl: downloadUrl,
     };
   }
 }
