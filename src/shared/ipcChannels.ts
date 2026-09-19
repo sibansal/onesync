@@ -15,6 +15,7 @@ export const IPC_CHANNELS = {
   SYNC_PAUSE: 'sync:pause',
   SYNC_RESUME: 'sync:resume',
   SYNC_CANCEL: 'sync:cancel',
+  SYNC_GET_STATE: 'sync:getState',
   SYNC_CONFIRM_MASS_MOVE: 'sync:confirmMassMove',
   SYNC_RETRY_FAILED: 'sync:retryFailed',
   SYNC_VERIFY_INTEGRITY: 'sync:verifyIntegrity',

@@ -41,6 +41,10 @@ export function useSyncState(): {
   });
 
   useEffect(() => {
+    window.onesync.getSyncState?.().then((st) => {
+      if (st) setSyncState(st);
+    });
+
     const unsubState = window.onesync.onSyncState((state) => {
       setSyncState(state);
     });

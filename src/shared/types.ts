@@ -150,6 +150,7 @@ export interface OneSyncAPI {
   pauseSync: () => Promise<void>;
   resumeSync: () => Promise<void>;
   cancelSync: () => Promise<void>;
+  getSyncState: () => Promise<SyncState>;
   confirmMassMove: (allow: boolean) => Promise<void>;
   retryFailed: () => Promise<void>;
   verifyIntegrity: () => Promise<void>;

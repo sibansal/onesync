@@ -116,15 +116,17 @@ OneSync provides a bulletproof, **one-way mirror** of OneDrive onto an external 
 - **CTA:** "Start syncing" button enabled only when all mandatory checks pass.
 
 ### Screen 3: Dashboard
-- **Header:** Account details, destination path, volume status indicator (green dot when connected, red when missing), last sync timestamp.
-- **Control Bar:** Primary sync actions ("Sync now", "Pause/Resume", "Cancel").
+- **Window Geometry:** Defaults to 1024 × 840 px with an enforced minimum height of 800 px (and 900 px width), ensuring activity console tables dynamically expand downwards to utilize the full available height.
+- **Header:** Account details, destination path, volume status indicator (green dot when connected, red when missing), last sync timestamp, and single directory source selector (`Entire OneDrive (/)` or specific directory).
+- **Control Bar:** Primary sync actions ("Sync now", "Pause/Resume", "Cancel", and "↻ Restart Sync" upon cancellation). Includes a "Cancelling..." transitional state while pipeline teardown completes.
 - **Metrics Bar:** Counters for Downloaded, Already up to date, Moved to restored, and Failed items.
-- **Active Streams:** Real-time transfer list (up to 8 files) with instantaneous speeds.
+- **Active Streams:** Real-time transfer list (up to 8 files) with instantaneous speeds and per-job ID indicator (`Job #<id>`).
 - **Tabbed Inspector:**
-  - **Activity:** Ring buffer of latest 200 system log messages.
+  - **Activity:** Ring buffer of latest 200 system log messages with downward-expanding console height.
   - **Failed:** Table of failed items with failure reason, retry count, and "Retry failed" button.
   - **Restored:** Chronological audit log of files moved to `restored/` with "Show in Finder" action.
-  - **History:** List of previous 20 sync runs with timestamp, duration, bytes synced, and status.
+  - **History:** List of previous sync runs with Job ID, timestamp, duration, bytes synced, and colored status badges (`COMPLETED`, `CANCELLED`, `FAILED`).
+
 
 ---
 

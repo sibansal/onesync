@@ -245,7 +245,12 @@ export function setupIpcHandlers(mainWindow: BrowserWindow): {
   });
 
   safeHandle(IPC_CHANNELS.SYNC_CANCEL, async () => {
-    syncEngine.cancelSync();
+    await syncEngine.cancelSyncAndWait();
+    return syncEngine.getState();
+  });
+
+  safeHandle(IPC_CHANNELS.SYNC_GET_STATE, async () => {
+    return syncEngine.getState();
   });
 
   safeHandle(IPC_CHANNELS.SYNC_CONFIRM_MASS_MOVE, async (_event, allow: unknown) => {

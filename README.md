@@ -10,27 +10,6 @@ Author: https://sibansal.dev/
 
 ---
 
-## 📷 Preview
-
-```
-+-----------------------------------------------------------------------+
-|  OneSync                user@example.com (34.2 GB / 100 GB)     [Sync] |
-|  Destination: /Volumes/BackupDrive/OneDriveMirror                      |
-+-----------------------------------------------------------------------+
-|  Phase: Downloading (4 workers)                 Speed: 18.4 MB/s       |
-|  [==================================>             ] 64% (12.4 / 19 GB) |
-|  Active Downloads:                                                    |
-|  - Documents/Tax2025.pdf (1.2 MB / 4.5 MB)                           |
-|  - Media/Keynote.mov     (450 MB / 1.2 GB)                            |
-|                                                                       |
-|  [Activity (142)]   [Failed (0)]   [Restored (3)]   [History (8)]     |
-+-----------------------------------------------------------------------+
-|  Made by sibansal.dev                                                  |
-+-----------------------------------------------------------------------+
-```
-
----
-
 ## ✨ Features
 
 - **Strict One-Way Mirroring:** Only reads from OneDrive (`Files.Read`, `User.Read`, `offline_access`). Never uploads, edits, or deletes anything in your cloud OneDrive.
@@ -42,8 +21,9 @@ Author: https://sibansal.dev/
 - **Atomic Downloads & Resumption:** Files are downloaded into `<SelectedFolder>/.onesync/tmp/*.part`, verified via cryptographic hashes (SHA-256, SHA-1, QuickXorHash), and atomically renamed. Broken downloads resume with HTTP Range requests.
 - **External Volume Verification:** Checks that destinations are genuinely mounted external drives under `/Volumes/` with a distinct filesystem device (`stat.dev`), preventing accidental filling of internal storage.
 - **Drive-Portable SQLite Database:** Sync state is recorded in `<SelectedFolder>/.onesync/state.db` using crash-safe synchronous modes, traveling with your external drive.
-- **Mass-Move Protection:** Prevents catastrophic accidental moves if OneDrive reports widespread deletions.
+- **Modern Dynamic Layout:** Designed for macOS with dark aesthetics, minimum 800 px window height, and dynamic downward expansion for activity console logs and audit tables.
 - **Apple Silicon Optimized:** Native `darwin-arm64` binary with hardened runtime and macOS Keychain integration via Electron `safeStorage`.
+
 
 ---
 

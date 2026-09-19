@@ -156,9 +156,9 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     title: 'OneSync',
     width: 960,
-    height: 680,
+    height: 840,
     minWidth: 800,
-    minHeight: 560,
+    minHeight: 800,
     show: false,
     autoHideMenuBar: false,
     icon: iconPath,

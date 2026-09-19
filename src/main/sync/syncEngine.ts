@@ -57,6 +57,7 @@ export class SyncEngine {
   private abortController: AbortController | null = null;
   private powerSaveBlockerId: number | null = null;
   private currentProgress: SyncProgress;
+  private activeRunPromise: Promise<{ success: boolean; error?: string }> | null = null;
 
   private async checkPauseAndCancel(): Promise<void> {
     if (this.abortController?.signal.aborted) {
@@ -290,6 +291,14 @@ export class SyncEngine {
       return { success: false, error: 'Sync is already running' };
     }
 
+    const runPromise = this.executeSyncRun(options);
+    this.activeRunPromise = runPromise;
+    return runPromise;
+  }
+
+  private async executeSyncRun(
+    options: { force?: boolean } = {},
+  ): Promise<{ success: boolean; error?: string }> {
     if (!this.baseFolder) {
       return { success: false, error: 'Please select a destination folder first' };
     }
@@ -581,7 +590,9 @@ export class SyncEngine {
       );
 
       this.currentProgress.restoredCount = finalRestored;
-      this.setPhase('idle');
+      this.currentPhase = 'idle';
+      this.currentProgress.phase = 'idle';
+      this.isCancelled = false;
       return { success: true };
     } catch (err: unknown) {
       const isCancelled =
@@ -592,6 +603,8 @@ export class SyncEngine {
 
       if (isCancelled) {
         this.isCancelled = true;
+        this.currentPhase = 'idle';
+        this.currentProgress.phase = 'idle';
         this.emitLog('info', `${this.currentJobId || 'Sync'} was cancelled by user.`);
         if (runId && this.syncRunsRepo) {
           this.syncRunsRepo.finishRun(runId, {
@@ -603,7 +616,6 @@ export class SyncEngine {
             bytes: this.currentProgress.bytesDone,
           });
         }
-        this.setPhase('idle');
         return { success: false, error: 'Sync cancelled by user' };
       }
 
@@ -621,13 +633,17 @@ export class SyncEngine {
         });
       }
 
-      this.setPhase('error', errMsg);
+      this.currentPhase = 'error';
+      this.currentProgress.phase = 'error';
       return { success: false, error: errMsg };
     } finally {
       this.isRunning = false;
       this.isPaused = false;
       this.stopPowerBlocker();
       this.abortController = null;
+      this.activeRunPromise = null;
+      this.listeners.onStateChange(this.getState());
+      this.listeners.onProgress(this.getProgress());
     }
   }
 
@@ -660,6 +676,18 @@ export class SyncEngine {
       this.emitLog('info', `Cancelling ${this.currentJobId || 'active sync run'}...`);
       if (this.pendingMassMoveResolve) {
         this.pendingMassMoveResolve(false);
+      }
+      this.listeners.onStateChange(this.getState());
+    }
+  }
+
+  public async cancelSyncAndWait(): Promise<void> {
+    this.cancelSync();
+    if (this.activeRunPromise) {
+      try {
+        await this.activeRunPromise;
+      } catch {
+        // ignore
       }
     }
   }

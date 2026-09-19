@@ -223,4 +223,20 @@ describe('SyncEngine with MockDrive', () => {
     expect(existsSync(join(testDir, 'onedrive', 'Documents', 'report.pdf'))).toBe(true);
     expect(existsSync(join(testDir, 'onedrive', 'Pictures', 'photo.jpg'))).toBe(false);
   });
+
+  it('cancelSyncAndWait cleanly waits for cancellation and releases isRunning immediately', async () => {
+    mockDrive.addFile('f1', 'root', 'fileLarge.dat', Buffer.alloc(1024 * 1024, 1));
+    const syncPromise = engine.startSync();
+    await new Promise((r) => setTimeout(r, 5));
+    await engine.cancelSyncAndWait();
+    expect(engine.getState().isRunning).toBe(false);
+    expect(engine.getState().isCancelled).toBe(true);
+    const syncRes = await syncPromise;
+    expect(syncRes.success).toBe(false);
+
+    // Can immediately start next run without "already running" error
+    const nextSync = await engine.startSync();
+    expect(nextSync.success).toBe(true);
+    expect(engine.getState().isCancelled).toBe(false);
+  });
 });

@@ -46,6 +46,8 @@ const api: OneSyncAPI = {
 
   cancelSync: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.SYNC_CANCEL),
 
+  getSyncState: (): Promise<SyncState> => ipcRenderer.invoke(IPC_CHANNELS.SYNC_GET_STATE),
+
   confirmMassMove: (allow: boolean): Promise<void> =>
     ipcRenderer.invoke(IPC_CHANNELS.SYNC_CONFIRM_MASS_MOVE, allow),
 

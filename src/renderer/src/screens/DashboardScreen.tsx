@@ -85,8 +85,24 @@ export function DashboardScreen({
     });
   }, []);
 
+  const isCancelledState =
+    Boolean(syncState.isCancelled) ||
+    (!syncState.isRunning && historyRuns[0]?.status === 'cancelled');
+
   const handleStartSync = async (force = false): Promise<void> => {
-    await window.onesync.startSync({ force });
+    try {
+      const res = await window.onesync.startSync({ force });
+      if (res && !res.success && res.error) {
+        setStatusNotification(`Could not start sync: ${res.error}`);
+        setTimeout(() => setStatusNotification(null), 5000);
+      }
+      await loadTabData();
+    } catch (err) {
+      setStatusNotification(
+        `Error starting sync: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      setTimeout(() => setStatusNotification(null), 5000);
+    }
   };
 
   const handlePauseResume = async (): Promise<void> => {
@@ -98,7 +114,12 @@ export function DashboardScreen({
   };
 
   const handleCancel = async (): Promise<void> => {
-    await window.onesync.cancelSync();
+    try {
+      await window.onesync.cancelSync();
+      await loadTabData();
+    } catch (err) {
+      console.error('Cancel sync failed:', err);
+    }
   };
 
   const handleRetryFailed = async (): Promise<void> => {
@@ -285,6 +306,7 @@ export function DashboardScreen({
             <>
               <button
                 onClick={handlePauseResume}
+                disabled={syncState.isCancelled}
                 style={{
                   padding: '0.45rem 0.9rem',
                   background: 'var(--bg-surface-elevated)',
@@ -293,11 +315,13 @@ export function DashboardScreen({
                   fontSize: '0.85rem',
                   fontWeight: 500,
                   color: 'var(--text-primary)',
+                  opacity: syncState.isCancelled ? 0.6 : 1,
                 }}
               >
                 {syncState.isPaused ? '▶ Resume' : '⏸ Pause'}
               </button>
               <button
+                disabled={syncState.isCancelled}
                 onClick={handleCancel}
                 style={{
                   padding: '0.45rem 0.9rem',
@@ -307,12 +331,14 @@ export function DashboardScreen({
                   fontSize: '0.85rem',
                   fontWeight: 500,
                   color: 'var(--accent-red)',
+                  opacity: syncState.isCancelled ? 0.6 : 1,
+                  cursor: syncState.isCancelled ? 'not-allowed' : 'pointer',
                 }}
               >
-                Cancel
+                {syncState.isCancelled ? 'Cancelling...' : 'Cancel'}
               </button>
             </>
-          ) : syncState.isCancelled ? (
+          ) : isCancelledState ? (
             <button
               disabled={!driveStatus.connected}
               onClick={() => handleStartSync(false)}
@@ -523,7 +549,7 @@ export function DashboardScreen({
         )}
 
         {/* Cancelled Sync Banner */}
-        {syncState.isCancelled && !syncState.isRunning && (
+        {isCancelledState && !syncState.isRunning && (
           <div
             style={{
               padding: '0.85rem 1.1rem',
@@ -538,7 +564,9 @@ export function DashboardScreen({
           >
             <div>
               <div style={{ fontWeight: 600, color: 'var(--accent-amber)', fontSize: '0.9rem' }}>
-                Sync Cancelled ({syncState.jobId || 'Previous Job'})
+                Sync Cancelled (
+                {syncState.jobId || (historyRuns[0] ? `Job #${historyRuns[0].id}` : 'Previous Job')}
+                )
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                 The previous sync run was cancelled by user. Partially downloaded files were cleanly
