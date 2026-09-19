@@ -239,4 +239,37 @@ describe('SyncEngine with MockDrive', () => {
     expect(nextSync.success).toBe(true);
     expect(engine.getState().isCancelled).toBe(false);
   });
+
+  it('app restart with existing sourceFolder preserves catalog and does not move files to restored', async () => {
+    mockDrive.addFolder('ws', 'root', 'Workspace');
+    mockDrive.addFile('f1', 'ws', 'code.ts', 'console.log("hello");');
+
+    // Run 1: initial sync with /Workspace
+    engine.setSourceFolder('/Workspace');
+    const run1 = await engine.startSync();
+    expect(run1.success).toBe(true);
+    expect(existsSync(join(testDir, 'onedrive', 'Workspace', 'code.ts'))).toBe(true);
+
+    // Simulate app restart: create a new SyncEngine instance as happens on app launch
+    const restartedEngine = new SyncEngine(mockDrive, mockListeners);
+    restartedEngine.setDestination(testDir);
+    restartedEngine.setAccount({
+      id: 'mock_user_account_id',
+      name: 'Mock User',
+      email: 'mock@example.com',
+    });
+    // ipc.ts restores saved sourceFolder from settingsStore
+    restartedEngine.setSourceFolder('/Workspace');
+
+    // Items table in DB must NOT have been deleted
+    const { itemsRepo } = restartedEngine.getDb();
+    expect(itemsRepo.getCount()).toBeGreaterThan(0);
+
+    // Run 2: sync on restarted engine
+    const run2 = await restartedEngine.startSync();
+    expect(run2.success).toBe(true);
+    expect(restartedEngine.getProgress().restoredCount).toBe(0);
+    expect(existsSync(join(testDir, 'onedrive', 'Workspace', 'code.ts'))).toBe(true);
+    expect(existsSync(join(testDir, 'restored'))).toBe(false);
+  });
 });

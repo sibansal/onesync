@@ -105,6 +105,18 @@ export class SyncEngine {
     this.itemsRepo = null;
     this.restoredLogRepo = null;
     this.syncRunsRepo = null;
+
+    if (this.baseFolder) {
+      try {
+        this.ensureDatabase();
+        const storedSource = (this.metaRepo as MetaRepo | null)?.getSourceFolder();
+        if (storedSource && !this.sourceFolder) {
+          this.sourceFolder = storedSource;
+        }
+      } catch {
+        // ignore
+      }
+    }
   }
 
   public setAccount(account: AccountInfo | null): void {
@@ -116,24 +128,31 @@ export class SyncEngine {
   }
 
   public setSourceFolder(folder: string | null): void {
-    if (this.sourceFolder !== folder) {
-      this.sourceFolder = folder;
+    const normalizedNew = folder && folder.trim() !== '' ? folder.trim() : null;
+    if (this.sourceFolder !== normalizedNew) {
+      this.sourceFolder = normalizedNew;
       try {
         if (this.baseFolder) {
           this.ensureDatabase();
           if (this.metaRepo) {
-            this.metaRepo.setDeltaLink('');
-            this.metaRepo.setSourceFolder(folder);
-          }
-          if (this.itemsRepo && this.appDb) {
-            const rawDb = this.appDb.getRawDb();
-            rawDb.exec('DELETE FROM items;');
+            const stored = this.metaRepo.getSourceFolder();
+            const normalizedStored = stored && stored.trim() !== '' ? stored.trim() : null;
+            if (normalizedStored !== null && normalizedStored !== normalizedNew) {
+              this.metaRepo.setDeltaLink(null);
+              this.metaRepo.setSourceFolder(normalizedNew);
+              if (this.itemsRepo && this.appDb) {
+                const rawDb = this.appDb.getRawDb();
+                rawDb.exec('DELETE FROM items;');
+              }
+            } else if (normalizedStored === null && normalizedNew !== null) {
+              this.metaRepo.setSourceFolder(normalizedNew);
+            }
           }
         }
       } catch (err) {
         logger.warn('Failed to clear delta/items on source folder change:', err);
       }
-      this.emitLog('info', `OneDrive source folder set to: ${folder || 'Entire OneDrive (/)'}`);
+      this.emitLog('info', `OneDrive source folder set to: ${normalizedNew || 'Entire OneDrive (/)'}`);
     }
   }
 
@@ -421,15 +440,16 @@ export class SyncEngine {
 
       // Reconcile source folder scope if changed since last run
       const storedSource = this.metaRepo!.getSourceFolder();
-      const currentSource = this.sourceFolder || '';
-      if (storedSource !== null && storedSource !== currentSource) {
+      const normalizedStored = storedSource && storedSource.trim() !== '' ? storedSource.trim() : null;
+      const currentSource = this.sourceFolder && this.sourceFolder.trim() !== '' ? this.sourceFolder.trim() : null;
+      if (normalizedStored !== null && normalizedStored !== currentSource) {
         this.emitLog(
           'info',
-          `Source scope changed (${storedSource || '/'} -> ${currentSource || '/'}). Resetting catalog.`,
+          `Source scope changed (${normalizedStored || '/'} -> ${currentSource || '/'}). Resetting catalog.`,
         );
         const rawDb = this.appDb!.getRawDb();
         rawDb.exec('DELETE FROM items;');
-        this.metaRepo!.setDeltaLink('');
+        this.metaRepo!.setDeltaLink(null);
       }
       this.metaRepo!.setSourceFolder(currentSource);
 
@@ -593,14 +613,32 @@ export class SyncEngine {
 
       const expectedFilePaths = new Set<string>();
       const expectedFolderPaths = new Set<string>();
+      const cloudItemsMap = new Map<string, import('./orphanSweeper').CloudItemSummary>();
 
       for (const item of allDbItems) {
         const p = pathMap.get(item.id);
         if (p) {
+          const normP = p.normalize('NFC');
           if (item.is_folder) {
-            expectedFolderPaths.add(p.normalize('NFC'));
+            expectedFolderPaths.add(normP);
           } else {
-            expectedFilePaths.add(p.normalize('NFC'));
+            expectedFilePaths.add(normP);
+            cloudItemsMap.set(normP.toLowerCase(), {
+              id: item.id,
+              desiredPath: p,
+              size: item.size,
+              fingerprint: item.fingerprint,
+            });
+            if (item.local_path && item.local_path !== p) {
+              const normLocal = item.local_path.normalize('NFC');
+              expectedFilePaths.add(normLocal);
+              cloudItemsMap.set(normLocal.toLowerCase(), {
+                id: item.id,
+                desiredPath: p,
+                size: item.size,
+                fingerprint: item.fingerprint,
+              });
+            }
           }
         }
       }
@@ -611,6 +649,8 @@ export class SyncEngine {
         expectedFolderPaths,
         restoredLogRepo: this.restoredLogRepo!,
         gatingAllowed: cleanDiscoveryCompleted && !this.abortController.signal.aborted,
+        itemsRepo: this.itemsRepo!,
+        cloudItems: cloudItemsMap,
         onFileRestored: (orig, rest) => {
           this.emitLog('info', `Moved ${orig} -> restored/${rest}`);
         },

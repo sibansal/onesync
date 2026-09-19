@@ -108,7 +108,9 @@ CREATE TABLE sync_runs (
 - `GET /me/drive/items/{id}?$select=id,@microsoft.graph.downloadUrl`: Pre-download direct link retrieval.
 
 ### Gotchas & Defenses
-- **Source Folder Scoping:** When a single directory is selected (e.g. `/Documents`), Graph API is queried via `GET /me/drive/root:/Documents:/delta`. Changing source folder resets `delta_link` to initiate a full re-scan of the new folder.
+- **Source Folder Scoping & App Restarts:** When a single directory is selected (e.g. `/Documents`), Graph API is queried via `GET /me/drive/root:/Documents:/delta`. Changing source folder resets `delta_link` to initiate a full re-scan of the new folder. On application launch, settings restoration reconciles against the persisted `source_folder` in SQLite `meta`, guaranteeing that reboots with the same folder scope never wipe the database catalog or clear delta links.
+- **Delta Link Fallback & Sanitization:** `delta_link` values in `meta` are strictly sanitized: empty or whitespace strings are treated as `null`. When `deltaLink` is null, Graph delta automatically falls back to `baseDeltaUrl` and flags `isFullListing = true`.
+- **Pre-existing File Preservation & Equivalence:** In Stage 5 (Sweep), files present on disk that have no prior database record are compared against cloud items (with APFS case-insensitivity support and sub-millisecond boundary read probes). If equivalent and healthy, they are preserved and adopted as synced rather than swept to `restored/`.
 - **Job ID Tracking:** Every sync job is assigned an incremental `Job #<id>` tied directly to `sync_runs.id`. This Job ID is included in `SyncState` and `SyncProgress` and surfaced across all logs and UI views.
 - **Paging:** Delta tokens are saved only after traversing all `@odata.nextLink` until `@odata.deltaLink`.
 - **Missing Paths:** `parentReference.path` is omitted in delta tokens; relative paths are reconstructed via in-memory parent-id walking.
@@ -128,6 +130,7 @@ Definitions:
 - `D`: Recorded DB row state for item
 - **Fingerprint**: `hash ?? cTag ?? eTag`
 - **Healthy**: Regular file, `size == D.local_size`, and `abs(mtime - D.local_mtime_ms) <= 2000 ms`
+- **Pre-existing Health Check**: For files present on disk without a prior DB record (`!hasDbRecord`), health is verified via: matching size + physical block allocation (`blocks > 0` or undefined) + fast sub-millisecond boundary seek & read probe (`probeFileReadable` reading head 4 KB and tail 4 KB in < 0.2 ms regardless of size, even on files > 10 GB). This probe executes **exclusively on pre-existing files**, avoiding any disk I/O overhead on files already synced and tracked in the database.
 
 | # | Situation | Action |
 |---|---|---|
@@ -140,7 +143,7 @@ Definitions:
 | 7 | `L` exists, fingerprint unchanged, size matches, mtime differs | Hash-verify `L`: match → update DB (`SKIP`); mismatch → move to `restored/` (`local_modified`), then `DOWNLOAD` |
 | 8 | `L` exists, fingerprint changed, `L` matches `D` (unmodified locally) | `DOWNLOAD` (atomic replacement) |
 | 9 | `L` exists, fingerprint changed and `L` differs from `D`, or size/hash mismatch | Move to `restored/` (`local_modified`), then `DOWNLOAD` |
-| 10 | `L` exists but no DB record (pre-existing file in dir) | If healthy (matching size): mark as `SKIP` (recorded in DB as `synced`, no action on file); if mismatch: move to `restored/` (`untracked_conflict`), then `DOWNLOAD` |
+| 10 | `L` exists but no DB record (pre-existing file in dir) | If healthy (matching size, non-hollow block allocation, and passing head+tail boundary probe): mark as `SKIP` (recorded in DB as `synced`, no action on file); if mismatch or unreadable: move to `restored/` (`untracked_conflict`), then `DOWNLOAD` |
 
 ---
 
@@ -218,4 +221,5 @@ Definitions:
 14. **Window Geometry & Dynamic Console Height:** The main window opens at `1024 x 840 px` with an enforced minimum height of `800 px` (`width: 900, minHeight: 800`) to guarantee ample viewports for activity logs and tables. The lower Activity Console section utilizes dynamic flex layout (`flex: 1 1 auto`) to expand downwards and claim all available vertical window space.
 15. **Async Cancellation Teardown & State Querying:** Sync engine exposes `cancelSyncAndWait(): Promise<void>` so the cancellation IPC handler awaits complete pipeline termination before replying. The engine's `finally` block guarantees an authoritative dispatch of `onStateChange({ isRunning: false, isCancelled: true })`. On window mount or refresh, the UI queries live state via `window.onesync.getSyncState()`, preventing desynchronization and ensuring the restart button is always surfaced cleanly.
 16. **User-Toggled System Sleep Prevention (Keep Awake):** Users can toggle system sleep prevention at any time via a dedicated sun icon button in the header next to the settings button. When active (glowing yellow/amber sun), Electron's `powerSaveBlocker` activates with `'prevent-app-suspension'`, preventing macOS from suspending or sleeping while syncing or idling (allowing screens to sleep). The toggle state is persisted in `settings.json` across restarts, loaded on launch, and cleaned up on application exit (`app.on('will-quit')`). Hovering over the button displays an informative tooltip indicating the current sleep prevention status.
+17. **Preexisting File Preservation & Orphan Sweep Equivalence Guard:** When a file is present on disk in `onedrive/` but not yet indexed in `state.db` (e.g. after database clearing or fresh setup), the planner directly marks matching files as `SKIP` without moving or downloading duplicates. In Stage 5 (Sweep), `sweepOrphans` utilizes case-insensitive path comparison (matching APFS case-preserving behavior on macOS) and evaluates an equivalence guard against discovered cloud items: any preexisting file whose relative path and file size match an item on OneDrive is preserved in place and marked as synced in the database rather than being moved to `restored/`. Root folder references in Microsoft Graph API delta payloads are normalized with `parentId: null` and excluded from path segment prepending.
 

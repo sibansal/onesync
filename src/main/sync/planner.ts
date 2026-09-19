@@ -1,5 +1,6 @@
+import { existsSync } from 'fs';
 import type { DbItem } from '../db/itemsRepo';
-import type { LocalStatEntry } from './localScanner';
+import { probeFileReadable, type LocalStatEntry } from './localScanner';
 
 export type PlanActionType =
   | 'SKIP'
@@ -143,8 +144,16 @@ export function planSyncItem(
     const isHashMismatch = Boolean(
       localItem.hash && item.fingerprint && localItem.hash !== item.fingerprint,
     );
+    const hasAllocatedBlocks =
+      item.size === 0 || localItem.blocks === undefined || localItem.blocks > 0;
+    const isReadable =
+      localItem.isReadable !== undefined
+        ? localItem.isReadable
+        : (localItem.fullPath && existsSync(localItem.fullPath)
+            ? probeFileReadable(localItem.fullPath, item.size)
+            : true);
 
-    if (isSizeMatch && !isHashMismatch) {
+    if (isSizeMatch && !isHashMismatch && hasAllocatedBlocks && isReadable) {
       // Available file is healthy -> mark as skipped file, make no action on file
       return {
         type: 'SKIP',

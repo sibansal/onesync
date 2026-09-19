@@ -367,4 +367,33 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     expect(item!.local_path).toBe('preexisting.pdf');
     db.close();
   });
+
+  it('Preexisting file with different casing on disk is not swept to restored/ when DB is empty', async () => {
+    // 1. File exists on OneDrive with lowercase
+    mockDrive.addFile('cased1', 'root', 'manual.pdf', 'Official Product Manual Content');
+
+    // 2. Preexisting file on disk has uppercase casing: Manual.PDF
+    const onedriveDir = join(testDir, 'onedrive');
+    mkdirSync(onedriveDir, { recursive: true });
+    writeFileSync(join(onedriveDir, 'Manual.PDF'), 'Official Product Manual Content');
+
+    // 3. Run sync with empty DB
+    const res = await engine.startSync();
+    expect(res.success).toBe(true);
+
+    const progress = engine.getProgress();
+    expect(progress.downloadedCount).toBe(0);
+    expect(progress.restoredCount).toBe(0);
+
+    // File was NOT swept to restored/
+    expect(existsSync(join(testDir, 'restored', 'Manual.PDF'))).toBe(false);
+    expect(existsSync(join(testDir, 'restored', 'manual.pdf'))).toBe(false);
+
+    // Database recorded as synced
+    const db = new AppDatabase(testDir);
+    const repo = new ItemsRepo(db.open());
+    const item = repo.getItem('cased1');
+    expect(item?.status).toBe('synced');
+    db.close();
+  });
 });

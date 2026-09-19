@@ -243,9 +243,10 @@ export class MockDrive implements RemoteDrive {
 
     onPage(allItems);
 
+    const effectiveDeltaLink = deltaLink && deltaLink.trim() !== '' ? deltaLink.trim() : null;
     return {
       deltaLink: `mock_delta_v${this.currentDeltaVersion}`,
-      isFullListing: !deltaLink,
+      isFullListing: !effectiveDeltaLink,
     };
   }
 
