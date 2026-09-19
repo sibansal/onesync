@@ -90,8 +90,14 @@ export function computeRelativePath(
       break;
     }
 
-    // Root items usually have no name or root property; don't prepend empty or root names
-    if (parent.parentId !== null && parent.name) {
+    // Root items usually have no name or 'root' name; don't prepend empty or root names
+    const isRoot =
+      !parent.name ||
+      parent.name.toLowerCase() === 'root' ||
+      parent.id === 'root' ||
+      parent.parentId === parent.id;
+
+    if (parent.parentId !== null && !isRoot) {
       segments.unshift(sanitizeSegment(parent.name));
     }
     currentParentId = parent.parentId;

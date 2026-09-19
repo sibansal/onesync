@@ -129,11 +129,15 @@ export class GraphDrive implements RemoteDrive {
         const hashType = sha256 ? 'sha256' : sha1 ? 'sha1' : quickXor ? 'quickXor' : null;
         const fingerprint = sha256 ?? sha1 ?? quickXor ?? raw.cTag ?? raw.eTag ?? null;
 
+        const isRoot = Boolean(raw.root) || raw.name?.toLowerCase() === 'root';
+        const parentId = isRoot ? null : (raw.parentReference?.id ?? null);
+        const name = isRoot ? '' : raw.name;
+
         parsedItems.push({
           id: raw.id,
-          parentId: raw.parentReference?.id ?? null,
-          name: raw.name,
-          isFolder: Boolean(raw.folder),
+          parentId,
+          name,
+          isFolder: Boolean(raw.folder) || Boolean(raw.root),
           size: raw.size ?? 0,
           fingerprint,
           hashType,

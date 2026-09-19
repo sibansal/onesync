@@ -593,14 +593,32 @@ export class SyncEngine {
 
       const expectedFilePaths = new Set<string>();
       const expectedFolderPaths = new Set<string>();
+      const cloudItemsMap = new Map<string, import('./orphanSweeper').CloudItemSummary>();
 
       for (const item of allDbItems) {
         const p = pathMap.get(item.id);
         if (p) {
+          const normP = p.normalize('NFC');
           if (item.is_folder) {
-            expectedFolderPaths.add(p.normalize('NFC'));
+            expectedFolderPaths.add(normP);
           } else {
-            expectedFilePaths.add(p.normalize('NFC'));
+            expectedFilePaths.add(normP);
+            cloudItemsMap.set(normP.toLowerCase(), {
+              id: item.id,
+              desiredPath: p,
+              size: item.size,
+              fingerprint: item.fingerprint,
+            });
+            if (item.local_path && item.local_path !== p) {
+              const normLocal = item.local_path.normalize('NFC');
+              expectedFilePaths.add(normLocal);
+              cloudItemsMap.set(normLocal.toLowerCase(), {
+                id: item.id,
+                desiredPath: p,
+                size: item.size,
+                fingerprint: item.fingerprint,
+              });
+            }
           }
         }
       }
@@ -611,6 +629,8 @@ export class SyncEngine {
         expectedFolderPaths,
         restoredLogRepo: this.restoredLogRepo!,
         gatingAllowed: cleanDiscoveryCompleted && !this.abortController.signal.aborted,
+        itemsRepo: this.itemsRepo!,
+        cloudItems: cloudItemsMap,
         onFileRestored: (orig, rest) => {
           this.emitLog('info', `Moved ${orig} -> restored/${rest}`);
         },

@@ -79,4 +79,69 @@ describe('orphanSweeper', () => {
     expect(movedCount).toBe(0);
     expect(existsSync(orphanFile)).toBe(true);
   });
+
+  it('preserves files that match expected paths case-insensitively on macOS', async () => {
+    const casedFile = join(testDir, 'onedrive', 'Report.PDF');
+    writeFileSync(casedFile, 'some content');
+
+    const expectedPaths = new Set(['report.pdf']);
+    const { movedCount } = await sweepOrphans({
+      baseFolder: testDir,
+      expectedPaths,
+      restoredLogRepo: restoredRepo,
+      gatingAllowed: true,
+    });
+
+    expect(movedCount).toBe(0);
+    expect(existsSync(casedFile)).toBe(true);
+  });
+
+  it('preserves existing file when equivalent to cloud item and marks it synced in itemsRepo', async () => {
+    const existingFile = join(testDir, 'onedrive', 'photo.jpg');
+    const content = 'JPEG image data payload';
+    writeFileSync(existingFile, content);
+
+    const { ItemsRepo } = await import('../src/main/db/itemsRepo');
+    const itemsRepo = new ItemsRepo(appDb.getRawDb());
+    itemsRepo.upsertBatch([
+      {
+        id: 'photo_id',
+        parentId: 'root',
+        name: 'photo.jpg',
+        isFolder: false,
+        size: Buffer.byteLength(content),
+        fingerprint: 'mock_fp',
+        hashType: null,
+        remoteModified: new Date().toISOString(),
+      },
+    ]);
+
+    const cloudItems = new Map([
+      [
+        'photo.jpg',
+        {
+          id: 'photo_id',
+          desiredPath: 'photo.jpg',
+          size: Buffer.byteLength(content),
+          fingerprint: 'mock_fp',
+        },
+      ],
+    ]);
+
+    // expectedPaths is intentionally empty (e.g. fresh DB before expectedPaths computed)
+    const { movedCount } = await sweepOrphans({
+      baseFolder: testDir,
+      expectedPaths: new Set(),
+      restoredLogRepo: restoredRepo,
+      gatingAllowed: true,
+      itemsRepo,
+      cloudItems,
+    });
+
+    expect(movedCount).toBe(0);
+    expect(existsSync(existingFile)).toBe(true);
+    const dbItem = itemsRepo.getItem('photo_id');
+    expect(dbItem?.status).toBe('synced');
+    expect(dbItem?.local_path).toBe('photo.jpg');
+  });
 });
