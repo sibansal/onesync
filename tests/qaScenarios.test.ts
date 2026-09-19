@@ -331,4 +331,40 @@ describe('QA Acceptance Scenarios E1 - E18', () => {
     expect(existsSync(join(testDir, 'onedrive', 'large.bin'))).toBe(true);
     expect(readFileSync(join(testDir, 'onedrive', 'large.bin'), 'utf-8')).toBe(fullContent);
   });
+
+  it('Healthy preexisting file in destination dir not yet in DB is marked as skipped with no action taken', async () => {
+    // 1. File exists on OneDrive
+    mockDrive.addFile('pre1', 'root', 'preexisting.pdf', 'My Healthy Existing Document');
+
+    // 2. File is already available in destination dir, but not added in DB yet
+    const onedriveDir = join(testDir, 'onedrive');
+    mkdirSync(onedriveDir, { recursive: true });
+    writeFileSync(join(onedriveDir, 'preexisting.pdf'), 'My Healthy Existing Document');
+
+    // 3. Run sync
+    const res = await engine.startSync();
+    expect(res.success).toBe(true);
+
+    const progress = engine.getProgress();
+    // Marked as skipped / up-to-date, 0 downloads, 0 restored
+    expect(progress.downloadedCount).toBe(0);
+    expect(progress.upToDateCount).toBe(1);
+    expect(progress.restoredCount).toBe(0);
+
+    // File was untouched in destination dir
+    expect(readFileSync(join(onedriveDir, 'preexisting.pdf'), 'utf-8')).toBe(
+      'My Healthy Existing Document',
+    );
+    // Nothing was moved to restored/
+    expect(existsSync(join(testDir, 'restored', 'preexisting.pdf'))).toBe(false);
+
+    // DB record now tracks it as synced
+    const db = new AppDatabase(testDir);
+    const repo = new ItemsRepo(db.open());
+    const item = repo.getItem('pre1');
+    expect(item).not.toBeNull();
+    expect(item!.status).toBe('synced');
+    expect(item!.local_path).toBe('preexisting.pdf');
+    db.close();
+  });
 });

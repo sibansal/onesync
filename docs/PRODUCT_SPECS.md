@@ -140,6 +140,7 @@ OneSync provides a bulletproof, **one-way mirror** of OneDrive onto an external 
 | **Mass-move triggered (>30% files deleted)** | Pauses run, opens confirmation dialog detailing number of items to be moved to `restored/`, and proceeds only upon explicit user consent. |
 | **Network disconnection during transfer** | Uses exponential backoff with jitter up to `MAX_RETRIES`. If retries exhaust, marks file for next sync cycle without halting other transfers. |
 | **User modified file locally** | Detected by modified mtime/size or hash mismatch. Original local file is preserved by moving to `restored/` (`local_modified`), and fresh cloud file is downloaded. |
+| **Pre-existing local files in destination dir** | If a file exists in the destination folder before being added to DB and is healthy (matching size), it is marked as skipped with no action taken on the file. Only mismatched files are moved to `restored/`. |
 | **Different OneDrive account on same drive folder** | Detects mismatched `meta.account_id` in `state.db`. Refuses to start sync to prevent account data interleaving. |
 
 ---
