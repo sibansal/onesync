@@ -1,0 +1,46 @@
+appId: dev.sibansal.onesync
+productName: OneSync
+copyright: Copyright © sibansal.dev
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - "out/**/*"
+  - "package.json"
+  - "!**/*.map"
+
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**/*"
+
+npmRebuild: true
+
+mac:
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+  category: public.app-category.utilities
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: false
+  artifactName: "OneSync-${version}-${arch}.${ext}"
+  extendInfo:
+    NSRemovableVolumesUsageDescription: "OneSync needs access to your external drive to sync your OneDrive files."
+
+dmg:
+  sign: false
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

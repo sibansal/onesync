@@ -1,0 +1,55 @@
+{
+  "name": "onesync",
+  "productName": "OneSync",
+  "version": "1.0.0",
+  "description": "macOS (Apple Silicon) desktop app that mirrors OneDrive to an external drive",
+  "main": "./out/main/index.js",
+  "author": {
+    "name": "sibansal.dev",
+    "url": "https://sibansal.dev/"
+  },
+  "homepage": "https://sibansal.dev/",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node scripts/patch-dev-branding.js && electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\" \"tests/**/*.{ts,tsx}\"",
+    "test": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/vitest/vitest.mjs run",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "postinstall": "electron-builder install-app-deps && node scripts/patch-dev-branding.js",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:mac": "npm run build && electron-builder --mac --arm64",
+    "release:mac": "scripts/release.sh"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^2.16.2",
+    "better-sqlite3": "^11.8.1",
+    "electron-log": "^5.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^20.17.19",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "dotenv-cli": "^8.0.0",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.5.1",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.14",
+    "vitest": "^2.1.8"
+  }
+}
