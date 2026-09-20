@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { rmSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { downloadFile } from '../src/main/sync/downloader';
+import { join, dirname } from 'path';
+import { downloadFile, getPartPath } from '../src/main/sync/downloader';
 import { MockDrive } from '../src/main/onedrive/mockDrive';
 import { AppDatabase } from '../src/main/db/database';
 import { ItemsRepo } from '../src/main/db/itemsRepo';
@@ -153,5 +153,71 @@ describe('Downloader with MockDrive', () => {
     // Verify .part was deleted
     const fpPrefix = item.fingerprint.slice(0, 8);
     expect(existsSync(join(testDir, '.onesync', 'tmp', `${item.id}-${fpPrefix}.part`))).toBe(false);
+  });
+
+  it('correctly sanitizes partPath when fingerprint or item ID contains slashes or illegal chars', () => {
+    const tmpDir = join(testDir, '.onesync', 'tmp');
+
+    // Reproducing exact production case: QuickXorHash with '/' in the first 8 characters
+    const partPath = getPartPath(
+      tmpDir,
+      '1B9CF09C5E1DF557!s55a663c81a454897a48e2c0279df72fc',
+      'c2/eUCZ12345678',
+    );
+
+    // The resulting file path must be directly inside tmpDir, without subdirectories
+    expect(dirname(partPath)).toBe(tmpDir);
+    expect(partPath).not.toContain('/eUCZ');
+    expect(partPath.endsWith('.part')).toBe(true);
+
+    // Also verify special characters like colon or backslash in item ID
+    const specialPath = getPartPath(tmpDir, 'item:id/with\\slash', 'tag"with<chars>');
+    expect(dirname(specialPath)).toBe(tmpDir);
+    expect(specialPath.endsWith('.part')).toBe(true);
+  });
+
+  it('downloads successfully when item fingerprint contains slashes (e.g. QuickXorHash)', async () => {
+    const content = 'File with QuickXorHash containing slash';
+    const fakeBase64FpWithSlash = 'c2/eUCZtest123456=';
+    const itemId = '1B9CF09C5E1DF557!s55a663c81a454897a48e2c0279df72fc';
+
+    mockDrive.addFile(itemId, 'root', 'yukti.pub', content, {
+      hashType: 'quickXor',
+    });
+
+    const item = {
+      id: itemId,
+      parentId: 'root',
+      name: 'yukti.pub',
+      isFolder: false,
+      size: Buffer.byteLength(content, 'utf8'),
+      fingerprint: null, // Null to skip verification or let mockDrive supply
+      hashType: null,
+      remoteModified: '2026-09-20T10:00:00Z',
+    };
+
+    itemsRepo.upsertBatch([item]);
+
+    // Set fingerprint on the item to the slash-containing fingerprint
+    const itemWithFp = {
+      ...item,
+      fingerprint: fakeBase64FpWithSlash,
+      hashType: null,
+    };
+
+    const result = await downloadFile(itemWithFp, 'yukti.pub', {
+      baseFolder: testDir,
+      remoteDrive: mockDrive,
+      itemsRepo,
+    });
+
+    expect(result.localSize).toBe(Buffer.byteLength(content, 'utf8'));
+    const downloadedPath = join(testDir, 'onedrive', 'yukti.pub');
+    expect(existsSync(downloadedPath)).toBe(true);
+    expect(readFileSync(downloadedPath, 'utf-8')).toBe(content);
+
+    const dbRecord = itemsRepo.getItem(itemId);
+    expect(dbRecord?.status).toBe('synced');
+    expect(dbRecord?.local_path).toBe('yukti.pub');
   });
 });

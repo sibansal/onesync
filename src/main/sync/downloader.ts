@@ -12,13 +12,14 @@ import {
 } from 'fs';
 import { dirname, join } from 'path';
 import { pipeline } from 'stream/promises';
-import { Writable } from 'stream';
+import { Transform } from 'stream';
 import { createHash } from 'crypto';
 import type { RemoteDrive } from '../onedrive/remoteDrive';
 import type { RemoteItem } from '../../shared/types';
 import type { ItemsRepo } from '../db/itemsRepo';
 import { SyncError } from '../utils/errors';
 import { QuickXorHasher } from '../utils/quickXorHash';
+import { sanitizeSegment } from '../fs/paths';
 import { safeMove } from '../fs/safeMove';
 import { getAvailableSpace } from '../fs/volume';
 import { logger } from '../logger';
@@ -37,6 +38,19 @@ export interface DownloaderOptions {
   itemsRepo: ItemsRepo;
   onProgress?: (update: DownloadProgressUpdate) => void;
   signal?: AbortSignal;
+}
+
+/**
+ * Safely resolves the temporary .part file path for an item, ensuring that
+ * characters like slashes in item IDs or base64 fingerprints do not create
+ * unwanted nested subdirectories or invalid filesystem paths.
+ */
+export function getPartPath(tmpDir: string, itemId: string, fingerprint: string | null): string {
+  const safeId = sanitizeSegment(itemId);
+  const rawPrefix = (fingerprint || 'initial').slice(0, 8);
+  const safePrefix = sanitizeSegment(rawPrefix);
+  const fileName = sanitizeSegment(`${safeId}-${safePrefix}.part`);
+  return join(tmpDir, fileName);
 }
 
 /**
@@ -92,8 +106,7 @@ export async function downloadFile(
   }
 
   // 2. Determine temporary file path based on item ID and fingerprint prefix
-  const fpPrefix = (item.fingerprint || 'initial').slice(0, 8);
-  const partPath = join(tmpDir, `${item.id}-${fpPrefix}.part`);
+  const partPath = getPartPath(tmpDir, item.id, item.fingerprint);
 
   if (!existsSync(tmpDir)) {
     mkdirSync(tmpDir, { recursive: true });
@@ -151,8 +164,8 @@ export async function downloadFile(
   let bytesDownloaded = existingBytes;
   let lastProgressReportTime = 0;
 
-  const hashingTransform = new Writable({
-    write(chunk: Buffer, _encoding, callback) {
+  const hashingTransform = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
       feedHasher(chunk);
       bytesDownloaded += chunk.length;
 
@@ -166,13 +179,12 @@ export async function downloadFile(
         });
       }
 
-      writeStream.write(chunk, callback);
+      callback(null, chunk);
     },
   });
 
   try {
-    await pipeline(remoteStream, hashingTransform, { signal });
-    writeStream.end();
+    await pipeline(remoteStream, hashingTransform, writeStream, { signal });
   } catch (streamErr: unknown) {
     writeStream.destroy();
 
@@ -233,24 +245,27 @@ export async function downloadFile(
     computedHash = quickXor.digest('base64');
   }
 
-  if (
-    item.fingerprint &&
-    computedHash &&
-    computedHash.toLowerCase() !== item.fingerprint.toLowerCase()
-  ) {
-    logger.warn(
-      `Hash mismatch for ${item.name}. Expected: ${item.fingerprint}, Got: ${computedHash}`,
-    );
-    try {
-      unlinkSync(partPath);
-    } catch {
-      // ignore
+  if (item.fingerprint && computedHash) {
+    const hashMatches =
+      item.hashType === 'quickXor'
+        ? computedHash === item.fingerprint
+        : computedHash.toLowerCase() === item.fingerprint.toLowerCase();
+
+    if (!hashMatches) {
+      logger.warn(
+        `Hash mismatch for ${item.name}. Expected: ${item.fingerprint}, Got: ${computedHash}`,
+      );
+      try {
+        unlinkSync(partPath);
+      } catch {
+        // ignore
+      }
+      throw new SyncError({
+        code: 'HASH_MISMATCH',
+        message: `Hash verification failed for ${item.name}`,
+        retriable: true,
+      });
     }
-    throw new SyncError({
-      code: 'HASH_MISMATCH',
-      message: `Hash verification failed for ${item.name}`,
-      retriable: true,
-    });
   }
 
   // 8. Set mtime & atomically move from .part to finalPath
