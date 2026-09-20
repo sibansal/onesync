@@ -33,7 +33,7 @@ Author: https://sibansal.dev/
 Install the latest OneSync release directly on macOS Apple Silicon without Gatekeeper warnings:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/sibansal/onesync/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/sibansal/onesync/release/v1.0.0-beta.1/scripts/install.sh | bash
 ```
 
 *This downloads the latest Apple Silicon release, installs `OneSync.app` into `/Applications`, and automatically removes the macOS browser quarantine attribute.*
