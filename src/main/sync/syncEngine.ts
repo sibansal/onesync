@@ -152,7 +152,10 @@ export class SyncEngine {
       } catch (err) {
         logger.warn('Failed to clear delta/items on source folder change:', err);
       }
-      this.emitLog('info', `OneDrive source folder set to: ${normalizedNew || 'Entire OneDrive (/)'}`);
+      this.emitLog(
+        'info',
+        `OneDrive source folder set to: ${normalizedNew || 'Entire OneDrive (/)'}`,
+      );
     }
   }
 
@@ -440,8 +443,10 @@ export class SyncEngine {
 
       // Reconcile source folder scope if changed since last run
       const storedSource = this.metaRepo!.getSourceFolder();
-      const normalizedStored = storedSource && storedSource.trim() !== '' ? storedSource.trim() : null;
-      const currentSource = this.sourceFolder && this.sourceFolder.trim() !== '' ? this.sourceFolder.trim() : null;
+      const normalizedStored =
+        storedSource && storedSource.trim() !== '' ? storedSource.trim() : null;
+      const currentSource =
+        this.sourceFolder && this.sourceFolder.trim() !== '' ? this.sourceFolder.trim() : null;
       if (normalizedStored !== null && normalizedStored !== currentSource) {
         this.emitLog(
           'info',
@@ -805,7 +810,7 @@ export class SyncEngine {
         const filePath = join(tmpDir, file);
         try {
           const s = statSync(filePath);
-          if (now - s.mtimeMs > SEVEN_DAYS_MS) {
+          if (s.isFile() && now - s.mtimeMs > SEVEN_DAYS_MS) {
             unlinkSync(filePath);
             this.emitLog('info', `Cleaned stale .part file: ${file}`);
           }

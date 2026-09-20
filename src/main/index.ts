@@ -2,6 +2,15 @@ import { app, BrowserWindow, shell, dialog, Menu } from 'electron';
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { config } from './config';
+import { logger } from './logger';
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception in main process:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection in main process:', reason);
+});
 
 // Set application name early so macOS menus, dock, and process reflect OneSync
 app.setName('OneSync');
