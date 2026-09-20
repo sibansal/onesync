@@ -28,16 +28,28 @@ Author: https://sibansal.dev/
 
 ---
 
+## 📦 Installation
+
+Install the latest OneSync release directly on macOS Apple Silicon without Gatekeeper warnings:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/sibansal/onesync/main/scripts/install.sh | bash
+```
+
+*This downloads the latest Apple Silicon release, installs `OneSync.app` into `/Applications`, and automatically removes the macOS browser quarantine attribute.*
+
+---
+
 ## ⚙️ Requirements
 
 - macOS Apple Silicon (M1/M2/M3/M4)
-- Node.js ≥ 20 (specified in `.nvmrc`)
+- Node.js ≥ 20 (specified in `.nvmrc` for development)
 - External drive formatted as APFS or exFAT (FAT32 supported with 4 GiB single-file limit)
 - Azure Application Client ID (Microsoft Entra ID Public Client)
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Development & Build
 
 1. **Clone repository and setup Node:**
    ```bash
