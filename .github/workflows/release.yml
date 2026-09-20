@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   release:
@@ -23,23 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run verification checks
-        run: npm run check
-
-      - name: Build production bundle
-        run: npm run build
-
-      - name: Package macOS Apple Silicon DMG & ZIP
+      - name: Build, Sign, Verify & Package macOS Release
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          npx electron-builder --mac --arm64
-          cd dist
-          shasum -a 256 *.dmg *.zip > SHA256SUMS.txt
+        run: npm run release:mac
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -47,5 +39,6 @@ jobs:
           files: |
             dist/*.dmg
             dist/*.zip
+            dist/*checksums*.txt
             dist/SHA256SUMS.txt
           generate_release_notes: true

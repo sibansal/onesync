@@ -99,6 +99,7 @@ echo "==> Generating checksums file (dist/onesync-${SAFE_BRANCH}-checksums.txt).
 
   # Maintain standard checksums.txt pointing to the same contents
   cp "$BRANCH_CHECKSUMS" checksums.txt
+  cp "$BRANCH_CHECKSUMS" SHA256SUMS.txt
 
   echo "==> Computed release checksums ($BRANCH_CHECKSUMS):"
   cat "$BRANCH_CHECKSUMS"
